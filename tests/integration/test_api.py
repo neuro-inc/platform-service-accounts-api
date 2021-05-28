@@ -1,10 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import AsyncIterator, Callable
 
 import aiohttp
 import pytest
 from aiohttp.web import HTTPOk
-from aiohttp.web_exceptions import HTTPForbidden, HTTPUnauthorized
+from aiohttp.web_exceptions import HTTPForbidden, HTTPNotFound, HTTPUnauthorized
 
 from platform_service_accounts_api.api import create_app
 from platform_service_accounts_api.config import Config
@@ -20,8 +20,12 @@ class ServiceAccountsApiEndpoints:
     address: ApiAddress
 
     @property
+    def server_base_url(self) -> str:
+        return f"http://{self.address.host}:{self.address.port}"
+
+    @property
     def api_v1_endpoint(self) -> str:
-        return f"http://{self.address.host}:{self.address.port}/api/v1"
+        return f"{self.server_base_url}/api/v1"
 
     @property
     def ping_url(self) -> str:
@@ -30,6 +34,10 @@ class ServiceAccountsApiEndpoints:
     @property
     def secured_ping_url(self) -> str:
         return f"{self.api_v1_endpoint}/secured-ping"
+
+    @property
+    def openapi_json_url(self) -> str:
+        return f"{self.server_base_url}/api/docs/v1/service_accounts/swagger.json"
 
 
 @pytest.fixture
@@ -42,6 +50,27 @@ async def service_accounts_api(
 
 
 class TestApi:
+    async def test_doc_available_when_enabled(
+        self, config: Config, client: aiohttp.ClientSession
+    ) -> None:
+        config = replace(config, enable_docs=True)
+        app = await create_app(config)
+        async with create_local_app_server(app, port=8080) as address:
+            endpoints = ServiceAccountsApiEndpoints(address=address)
+            async with client.get(endpoints.openapi_json_url) as resp:
+                assert resp.status == HTTPOk.status_code
+                assert await resp.json()
+
+    async def test_no_docs_when_disabled(
+        self, config: Config, client: aiohttp.ClientSession
+    ) -> None:
+        config = replace(config, enable_docs=False)
+        app = await create_app(config)
+        async with create_local_app_server(app, port=8080) as address:
+            endpoints = ServiceAccountsApiEndpoints(address=address)
+            async with client.get(endpoints.openapi_json_url) as resp:
+                assert resp.status == HTTPNotFound.status_code
+
     async def test_ping(
         self,
         service_accounts_api: ServiceAccountsApiEndpoints,
@@ -109,7 +138,6 @@ class TestApi:
             assert resp.status == HTTPOk.status_code, await resp.text()
             assert resp.headers["Access-Control-Allow-Origin"] == "https://neu.ro"
             assert resp.headers["Access-Control-Allow-Credentials"] == "true"
-            assert resp.headers["Access-Control-Expose-Headers"] == ""
 
     async def test_ping_options_no_headers(
         self,

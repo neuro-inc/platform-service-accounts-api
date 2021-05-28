@@ -9,11 +9,13 @@ from typing import Any, AsyncIterator, Callable
 import aiohttp
 import aiohttp.web
 import pytest
+from yarl import URL
 
 from platform_service_accounts_api.config import (
     Config,
     CORSConfig,
     PlatformAuthConfig,
+    PostgresConfig,
     ServerConfig,
 )
 
@@ -41,15 +43,16 @@ async def client() -> AsyncIterator[aiohttp.ClientSession]:
 @pytest.fixture
 def config_factory(
     auth_config: PlatformAuthConfig,
-    cluster_name: str,
+    postgres_config: PostgresConfig,
 ) -> Callable[..., Config]:
     def _f(**kwargs: Any) -> Config:
         defaults = dict(
             server=ServerConfig(host="0.0.0.0", port=8080),
             platform_auth=auth_config,
-            cluster_name=cluster_name,
             cors=CORSConfig(allowed_origins=["https://neu.ro"]),
             sentry=None,
+            postgres=postgres_config,
+            api_base_url=URL("https://dev.neu.ro/api/v1"),
         )
         kwargs = {**defaults, **kwargs}
         return Config(**kwargs)
