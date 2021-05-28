@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict
+from unittest.mock import ANY
 
 import pytest
 from yarl import URL
@@ -8,6 +9,7 @@ from platform_service_accounts_api.config import (
     Config,
     CORSConfig,
     PlatformAuthConfig,
+    PostgresConfig,
     SentryConfig,
     ServerConfig,
     ZipkinConfig,
@@ -44,12 +46,21 @@ def test_create(cert_authority_path: str, token_path: str) -> None:
         "NP_ZIPKIN_URL": "http://zipkin:9411",
         "NP_SENTRY_DSN": "https://test.com",
         "NP_SENTRY_CLUSTER_NAME": "test",
+        "NP_DB_POSTGRES_DSN": "postgresql://postgres@localhost:5432/postgres",
+        "NP_DB_POSTGRES_POOL_MIN": "50",
+        "NP_DB_POSTGRES_POOL_MAX": "500",
     }
     config = EnvironConfigFactory(environ).create()
     assert config == Config(
         server=ServerConfig(host="0.0.0.0", port=8080),
         platform_auth=PlatformAuthConfig(
             url=URL("http://platformauthapi/api/v1"), token="platform-auth-token"
+        ),
+        postgres=PostgresConfig(
+            postgres_dsn="postgresql://postgres@localhost:5432/postgres",
+            pool_min_size=50,
+            pool_max_size=500,
+            alembic=ANY,
         ),
         cors=CORSConfig(["https://domain1.com", "http://do.main"]),
         zipkin=ZipkinConfig(url=URL("http://zipkin:9411")),

@@ -1,13 +1,17 @@
 import logging
 import os
+import pathlib
 from typing import Dict, Optional, Sequence
 
 from yarl import URL
+
+from alembic.config import Config as AlembicConfig
 
 from .config import (
     Config,
     CORSConfig,
     PlatformAuthConfig,
+    PostgresConfig,
     SentryConfig,
     ServerConfig,
     ZipkinConfig,
@@ -31,6 +35,7 @@ class EnvironConfigFactory:
             cors=self.create_cors(),
             zipkin=self.create_zipkin(),
             sentry=self.create_sentry(),
+            postgres=self.create_postgres(),
             enable_docs=enable_docs,
         )
 
@@ -74,3 +79,41 @@ class EnvironConfigFactory:
                 self._environ.get("NP_SENTRY_SAMPLE_RATE", SentryConfig.sample_rate)
             ),
         )
+
+    def create_postgres(self) -> PostgresConfig:
+        try:
+            postgres_dsn = self._environ["NP_DB_POSTGRES_DSN"]
+        except KeyError:
+            # Temporary fix until postgres deployment is set
+            postgres_dsn = ""
+        pool_min_size = int(
+            self._environ.get("NP_DB_POSTGRES_POOL_MIN", PostgresConfig.pool_min_size)
+        )
+        pool_max_size = int(
+            self._environ.get("NP_DB_POSTGRES_POOL_MAX", PostgresConfig.pool_max_size)
+        )
+        connect_timeout_s = float(
+            self._environ.get(
+                "NP_DB_POSTGRES_CONNECT_TIMEOUT", PostgresConfig.connect_timeout_s
+            )
+        )
+        command_timeout_s = PostgresConfig.command_timeout_s
+        if self._environ.get("NP_DB_POSTGRES_COMMAND_TIMEOUT"):
+            command_timeout_s = float(self._environ["NP_DB_POSTGRES_COMMAND_TIMEOUT"])
+        return PostgresConfig(
+            postgres_dsn=postgres_dsn,
+            alembic=self.create_alembic(postgres_dsn),
+            pool_min_size=pool_min_size,
+            pool_max_size=pool_max_size,
+            connect_timeout_s=connect_timeout_s,
+            command_timeout_s=command_timeout_s,
+        )
+
+    def create_alembic(self, postgres_dsn: str) -> AlembicConfig:
+        parent_path = pathlib.Path(__file__).resolve().parent.parent
+        ini_path = str(parent_path / "alembic.ini")
+        script_path = str(parent_path / "alembic")
+        config = AlembicConfig(ini_path)
+        config.set_main_option("script_location", script_path)
+        config.set_main_option("sqlalchemy.url", postgres_dsn.replace("%", "%%"))
+        return config
