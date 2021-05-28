@@ -35,6 +35,9 @@ class InMemoryStorage(Storage):
                 return item
         raise NotExistsError
 
+    async def delete(self, id: str) -> None:
+        self._items.pop(id)
+
     async def list(self, owner: Optional[str] = None) -> AsyncIterator[ServiceAccount]:
         for item in self._items.values():
             if owner is not None and item.owner != owner:

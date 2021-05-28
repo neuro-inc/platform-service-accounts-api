@@ -57,6 +57,13 @@ class TestStorage:
         with pytest.raises(NotExistsError):
             await storage.get("wrong-id")
 
+    async def test_delete(self, storage: Storage) -> None:
+        data = await self.gen_data()
+        created = await storage.create(data)
+        await storage.delete(created.id)
+        with pytest.raises(NotExistsError):
+            await storage.get(created.id)
+
     async def test_get_by_name(self, storage: Storage) -> None:
         data = await self.gen_data()
         res = await storage.create(data)

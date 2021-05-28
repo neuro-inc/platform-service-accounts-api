@@ -23,8 +23,11 @@ from platform_logging import init_logging, notrace, setup_sentry, setup_zipkin_t
 
 from .config import Config, CORSConfig, PlatformAuthConfig
 from .config_factory import EnvironConfigFactory
+from .postgres import create_postgres_pool
 from .schema import ClientErrorSchema, ExampleSchema
-from .service import Service
+from .service import AccountsService
+from .storage.base import Storage
+from .storage.postgres import PostgresStorage
 
 
 logger = logging.getLogger(__name__)
@@ -159,8 +162,20 @@ async def create_app(config: Config) -> aiohttp.web.Application:
                 app=app, auth_client=auth_client, auth_scheme=AuthScheme.BEARER
             )
 
+            logger.info("Initializing Postgres connection pool")
+            postgres_pool = await exit_stack.enter_async_context(
+                create_postgres_pool(config.postgres)
+            )
+
+            logger.info("Initializing PostgresStorage")
+            storage: Storage = PostgresStorage(postgres_pool)
+
             logger.info("Initializing Service")
-            app["service_accounts_app"]["service"] = Service()
+            app["service_accounts_app"]["service"] = AccountsService(
+                auth_client=auth_client,
+                storage=storage,
+                api_base_url=config.api_base_url,
+            )
 
             yield
 

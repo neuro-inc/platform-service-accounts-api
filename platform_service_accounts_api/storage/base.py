@@ -69,6 +69,10 @@ class Storage(ABC):
         pass
 
     @abstractmethod
+    async def delete(self, id: str) -> None:
+        pass
+
+    @abstractmethod
     async def get_by_name(self, name: str, owner: str) -> ServiceAccount:
         pass
 

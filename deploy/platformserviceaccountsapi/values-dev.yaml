@@ -1,3 +1,5 @@
+apiBaseUrl: https://dev.neu.ro/api/v1
+
 ingress:
   enabled: true
 

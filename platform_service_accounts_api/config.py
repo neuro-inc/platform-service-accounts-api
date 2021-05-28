@@ -55,6 +55,7 @@ class PostgresConfig:
 
 @dataclass(frozen=True)
 class Config:
+    api_base_url: URL
     server: ServerConfig
     platform_auth: PlatformAuthConfig
     cors: CORSConfig

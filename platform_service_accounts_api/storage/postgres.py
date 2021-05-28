@@ -129,6 +129,10 @@ class PostgresStorage(Storage):
             raise NotExistsError
         return self._from_record(record)
 
+    async def delete(self, id: str) -> None:
+        query = self._table.delete().where(self._table.c.id == id)
+        await self._execute(query)
+
     async def list(
         self,
         owner: Optional[str] = None,

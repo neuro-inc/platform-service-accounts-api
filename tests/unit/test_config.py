@@ -49,6 +49,7 @@ def test_create(cert_authority_path: str, token_path: str) -> None:
         "NP_DB_POSTGRES_DSN": "postgresql://postgres@localhost:5432/postgres",
         "NP_DB_POSTGRES_POOL_MIN": "50",
         "NP_DB_POSTGRES_POOL_MAX": "500",
+        "NP_SERVICE_ACCOUNTS_API_BASE_URL": "https://dev.neu.ro/api/v1",
     }
     config = EnvironConfigFactory(environ).create()
     assert config == Config(
@@ -66,4 +67,5 @@ def test_create(cert_authority_path: str, token_path: str) -> None:
         zipkin=ZipkinConfig(url=URL("http://zipkin:9411")),
         sentry=SentryConfig(dsn=URL("https://test.com"), cluster_name="test"),
         enable_docs=True,
+        api_base_url=URL("https://dev.neu.ro/api/v1"),
     )

@@ -29,7 +29,9 @@ class EnvironConfigFactory:
         enable_docs = (
             self._environ.get("NP_SERVICE_ACCOUNTS_API_ENABLE_DOCS", "false") == "true"
         )
+        api_base_url = URL(self._environ["NP_SERVICE_ACCOUNTS_API_BASE_URL"])
         return Config(
+            api_base_url=api_base_url,
             server=self._create_server(),
             platform_auth=self._create_platform_auth(),
             cors=self.create_cors(),
