@@ -14,20 +14,33 @@ from aiohttp.web import (
     json_response,
     middleware,
 )
-from aiohttp.web_exceptions import HTTPConflict, HTTPCreated
-from aiohttp_apispec import docs, request_schema, setup_aiohttp_apispec
+from aiohttp.web_exceptions import (
+    HTTPConflict,
+    HTTPCreated,
+    HTTPNoContent,
+    HTTPNotFound,
+    HTTPOk,
+)
+from aiohttp_apispec import docs, request_schema, response_schema, setup_aiohttp_apispec
 from aiohttp_security import check_authorized
-from neuro_auth_client import AuthClient
+from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import AuthScheme, setup_security
 from platform_logging import init_logging, notrace, setup_sentry, setup_zipkin_tracer
 
 from .config import Config, CORSConfig, PlatformAuthConfig
 from .config_factory import EnvironConfigFactory
+from .identity import untrusted_user
 from .postgres import create_postgres_pool
-from .schema import ClientErrorSchema, ExampleSchema
-from .service import AccountsService
-from .storage.base import Storage
+from .schema import (
+    ClientErrorSchema,
+    ServiceAccountCreateSchema,
+    ServiceAccountSchema,
+    ServiceAccountWithTokenSchema,
+)
+from .service import AccountCreateData, AccountsService, ServiceAccount
+from .storage.base import ExistsError, NotExistsError, Storage
 from .storage.postgres import PostgresStorage
+from .utils import accepts_ndjson, auto_close, ndjson_error_handler
 
 
 logger = logging.getLogger(__name__)
@@ -60,34 +73,125 @@ class ServiceAccountsApiHandler:
     def register(self, app: aiohttp.web.Application) -> None:
         app.add_routes(
             [
-                aiohttp.web.post("", self.sample_request),
+                aiohttp.web.get("", self.list),
+                aiohttp.web.post("", self.create),
+                aiohttp.web.get("/{id_or_name}", self.get),
+                aiohttp.web.delete("/{id_or_name}", self.delete),
             ]
         )
 
+    @property
+    def service(self) -> AccountsService:
+        return self._app["service"]
+
+    async def _get_untrusted_user(self, request: Request) -> User:
+        identity = await untrusted_user(request)
+        return User(name=identity.name)
+
+    async def _resolve_service_account(self, request: Request) -> ServiceAccount:
+        id_or_name = request.match_info["id_or_name"]
+        try:
+            account = await self.service.get(id_or_name)
+        except NotExistsError:
+            user = await self._get_untrusted_user(request)
+            try:
+                account = await self.service.get_by_name(id_or_name, user.name)
+            except NotExistsError:
+                raise HTTPNotFound(text=f"Service account {id_or_name} not found")
+        return account
+
     @docs(
-        tags=["api"],
-        summary="Example request",
+        tags=["service_accounts"],
+        summary="List all Service Accounts current user has access",
+    )
+    @response_schema(ServiceAccountSchema(many=True), HTTPOk.status_code)
+    async def list(
+        self,
+        request: aiohttp.web.Request,
+    ) -> aiohttp.web.StreamResponse:
+        username = await check_authorized(request)
+        bake_images = self.service.list(owner=username)
+        async with auto_close(bake_images):
+            if accepts_ndjson(request):
+                response = aiohttp.web.StreamResponse()
+                response.headers["Content-Type"] = "application/x-ndjson"
+                await response.prepare(request)
+                async with ndjson_error_handler(request, response):
+                    async for image in bake_images:
+                        payload_line = ServiceAccountSchema().dumps(image)
+                        await response.write(payload_line.encode() + b"\n")
+                return response
+            else:
+                response_payload = [
+                    ServiceAccountSchema().dump(image) async for image in bake_images
+                ]
+                return aiohttp.web.json_response(
+                    data=response_payload, status=HTTPOk.status_code
+                )
+
+    @docs(tags=["service_accounts"], summary="Get service account by id or name")
+    @response_schema(ServiceAccountSchema(), HTTPOk.status_code)
+    async def get(self, request: aiohttp.web.Request) -> aiohttp.web.Response:
+        username = await check_authorized(request)
+        account = await self._resolve_service_account(request)
+        # TODO: replace with proper permissions check when implemented
+        if account.owner != username:
+            id_or_name = request.match_info["id_or_name"]
+            raise HTTPNotFound(text=f"Service account {id_or_name} not found")
+        return aiohttp.web.json_response(
+            data=ServiceAccountSchema().dump(account), status=HTTPOk.status_code
+        )
+
+    @docs(tags=["service_accounts"], summary="Revoke and delete service account")
+    async def delete(self, request: aiohttp.web.Request) -> aiohttp.web.Response:
+        username = await check_authorized(request)
+        account = await self._resolve_service_account(request)
+        # TODO: replace with proper permissions check when implemented
+        if account.owner != username:
+            id_or_name = request.match_info["id_or_name"]
+            raise HTTPNotFound(text=f"Service account {id_or_name} not found")
+        await self.service.delete(account.id)
+        return aiohttp.web.Response(status=HTTPNoContent.status_code)
+
+    @docs(
+        tags=["service_accounts"],
+        summary="Create new service account",
         responses={
             HTTPCreated.status_code: {
-                "description": "Bake created",
-                "schema": ExampleSchema(),
+                "description": "Service account created",
+                "schema": ServiceAccountWithTokenSchema(),
             },
             HTTPConflict.status_code: {
-                "description": "bake with such id exists",
+                "description": "Service Account with such name exists",
                 "schema": ClientErrorSchema(),
             },
         },
     )
-    @request_schema(ExampleSchema())
-    async def sample_request(
+    @request_schema(ServiceAccountCreateSchema())
+    async def create(
         self,
         request: aiohttp.web.Request,
     ) -> aiohttp.web.Response:
-        await check_authorized(request)
-        schema = ExampleSchema()
-        data = schema.load(await request.json())
+        username = await check_authorized(request)
+        schema = ServiceAccountCreateSchema()
+        data_raw = schema.load(await request.json())
+        data = AccountCreateData(
+            **data_raw,
+            owner=username,
+        )
+        try:
+            account = self.service.create(data)
+        except ExistsError:
+            return json_response(
+                {
+                    "code": "unique",
+                    "description": "Service Account with such name exists",
+                },
+                status=HTTPConflict.status_code,
+            )
         return aiohttp.web.json_response(
-            data={"id": "id", "name": data["name"]}, status=HTTPCreated.status_code
+            data=ServiceAccountWithTokenSchema().dump(account),
+            status=HTTPCreated.status_code,
         )
 
 

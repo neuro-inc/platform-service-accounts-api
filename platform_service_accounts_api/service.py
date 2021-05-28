@@ -95,6 +95,12 @@ class AccountsService:
             **asdict(account), role_deleted=await self._check_role_deleted(account.role)
         )
 
+    async def get_by_name(self, name: str, owner: str) -> ServiceAccount:
+        account = await self._storage.get_by_name(name, owner)
+        return ServiceAccount(
+            **asdict(account), role_deleted=await self._check_role_deleted(account.role)
+        )
+
     async def list(self, owner: str) -> AsyncIterator[ServiceAccount]:
         async for account in self._storage.list(owner):
             yield ServiceAccount(

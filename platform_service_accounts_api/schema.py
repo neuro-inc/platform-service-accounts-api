@@ -31,9 +31,21 @@ def query_schema(**kwargs: fields.Field) -> Callable[[F], F]:
     return _decorator
 
 
-class ExampleSchema(Schema):
-    id = fields.String(required=True, dump_only=True)
+class ServiceAccountCreateSchema(Schema):
     name = fields.String(required=True)
+    role = fields.String(required=True)
+    default_cluster = fields.String(required=True)
+
+
+class ServiceAccountSchema(ServiceAccountCreateSchema):
+    id = fields.String(required=True)
+    owner = fields.String(required=True)
+    created_at = fields.AwareDateTime(required=True)
+    role_deleted = fields.Boolean(required=True)
+
+
+class ServiceAccountWithTokenSchema(ServiceAccountSchema):
+    token = fields.String(required=True)
 
 
 class ClientErrorSchema(Schema):
