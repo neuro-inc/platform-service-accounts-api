@@ -296,10 +296,10 @@ async def create_app(config: Config) -> aiohttp.web.Application:
 
     _setup_cors(app, config.cors)
     if config.enable_docs:
-        prefix = "/api/docs/v1/flow"
+        prefix = "/api/docs/v1/service_accounts"
         setup_aiohttp_apispec(
             app=app,
-            title="Neuro Flow API documentation",
+            title="Service Accounts API documentation",
             version="v1",
             url=f"{prefix}/swagger.json",
             static_path=f"{prefix}/static",
