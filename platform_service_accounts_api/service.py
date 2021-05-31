@@ -125,8 +125,10 @@ class AccountsService:
                 account.role, [self._make_token_uri(id)]
             )
         except ClientResponseError as e:
-            if e.status == 400 and e.message == "Operation has no effect":
-                # Token permission was already revoked
-                pass
-            raise
+            if e.status == 404:
+                pass  # Role was deleted
+            elif e.status == 400 and e.message == "Operation has no effect":
+                pass  # Token permission was already revoked
+            else:
+                raise
         await self._storage.delete(id)

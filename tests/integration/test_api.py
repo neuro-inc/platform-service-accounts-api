@@ -459,3 +459,63 @@ class TestApi:
 
         with pytest.raises(ClientResponseError):
             await auth_client.get_user(role_name, token=auth_token)
+
+    async def test_account_delete_role_deleted(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id = payload["id"]
+
+        # Drop role
+        path = auth_client._get_user_path(role_name)
+        async with auth_client._request(method="DELETE", path=path):
+            pass
+
+        async with client.delete(
+            url=service_accounts_api.account_url(account_id),
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPNoContent.status_code, await resp.text()
+
+    async def test_account_delete_role_recreated(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id = payload["id"]
+
+        # Drop role
+        path = auth_client._get_user_path(role_name)
+        async with auth_client._request(method="DELETE", path=path):
+            pass
+
+        await auth_client.add_user(User(role_name))
+
+        async with client.delete(
+            url=service_accounts_api.account_url(account_id),
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPNoContent.status_code, await resp.text()
