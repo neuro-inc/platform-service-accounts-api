@@ -26,7 +26,7 @@ class CORSConfig:
 @dataclass(frozen=True)
 class ZipkinConfig:
     url: URL
-    app_name: str = "platform-neuro-flow-api"
+    app_name: str = "platform-service-accounts-api"
     sample_rate: float = 0.0
 
 
@@ -34,7 +34,7 @@ class ZipkinConfig:
 class SentryConfig:
     dsn: URL
     cluster_name: str
-    app_name: str = "platform-neuro-flow-api"
+    app_name: str = "platform-service-accounts-api"
     sample_rate: float = 0.0
 
 

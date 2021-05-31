@@ -1,14 +1,26 @@
+import base64
+import json
 from dataclasses import dataclass, replace
+from datetime import datetime
 from typing import AsyncIterator, Callable
 
 import aiohttp
 import pytest
+from aiohttp import ClientResponseError
 from aiohttp.web import HTTPOk
-from aiohttp.web_exceptions import HTTPForbidden, HTTPNotFound, HTTPUnauthorized
+from aiohttp.web_exceptions import (
+    HTTPCreated,
+    HTTPForbidden,
+    HTTPNoContent,
+    HTTPNotFound,
+    HTTPUnauthorized,
+)
+from neuro_auth_client import AuthClient, Cluster, User
 
 from platform_service_accounts_api.api import create_app
 from platform_service_accounts_api.config import Config
 
+from .auth import _User
 from .conftest import ApiAddress, create_local_app_server
 
 
@@ -38,6 +50,13 @@ class ServiceAccountsApiEndpoints:
     @property
     def openapi_json_url(self) -> str:
         return f"{self.server_base_url}/api/docs/v1/service_accounts/swagger.json"
+
+    @property
+    def accounts_url(self) -> str:
+        return f"{self.server_base_url}/api/v1/service_accounts"
+
+    def account_url(self, id: str) -> str:
+        return f"{self.accounts_url}/{id}"
 
 
 @pytest.fixture
@@ -185,3 +204,224 @@ class TestApi:
             assert resp.headers["Access-Control-Allow-Origin"] == "https://neu.ro"
             assert resp.headers["Access-Control-Allow-Credentials"] == "true"
             assert resp.headers["Access-Control-Allow-Methods"] == "GET"
+
+    async def make_subrole(self, user: _User, auth_client: AuthClient) -> str:
+        role_name = f"{user.name}/roles/test"
+        role = User(name=role_name, clusters=[Cluster(name="default")])
+        await auth_client.add_user(role)
+        return role_name
+
+    async def test_account_create(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            assert payload["name"] == "test"
+            assert payload["owner"] == regular_user.name
+            assert payload["default_cluster"] == "default"
+            assert payload["role"] == role_name
+            assert datetime.fromisoformat(payload["created_at"])
+            assert not payload["role_deleted"]
+            assert "id" in payload
+            token = payload["token"]
+
+        token_data = json.loads(base64.b64decode(token.encode()).decode())
+        assert token_data["cluster"] == "default"
+        assert token_data["url"] == "https://dev.neu.ro/api/v1"
+
+        auth_token = token_data["token"]
+
+        fetched_role = await auth_client.get_user(role_name, token=auth_token)
+        assert fetched_role.name == role_name
+
+    async def test_account_get(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id = payload["id"]
+
+        async with client.get(
+            url=service_accounts_api.account_url(account_id),
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPOk.status_code, await resp.text()
+            payload = await resp.json()
+            assert "token" not in payload
+            assert payload["id"] == account_id
+            assert payload["name"] == "test"
+            assert payload["owner"] == regular_user.name
+            assert payload["default_cluster"] == "default"
+            assert payload["role"] == role_name
+            assert datetime.fromisoformat(payload["created_at"])
+            assert not payload["role_deleted"]
+
+    async def test_account_get_by_name(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id = payload["id"]
+
+        async with client.get(
+            url=service_accounts_api.account_url("test"),
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPOk.status_code, await resp.text()
+            payload = await resp.json()
+            assert "token" not in payload
+            assert payload["id"] == account_id
+            assert payload["name"] == "test"
+            assert payload["owner"] == regular_user.name
+            assert payload["default_cluster"] == "default"
+            assert payload["role"] == role_name
+            assert datetime.fromisoformat(payload["created_at"])
+            assert not payload["role_deleted"]
+
+    async def test_accounts_list_none(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+    ) -> None:
+        async with client.get(
+            url=service_accounts_api.accounts_url,
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPOk.status_code, await resp.text()
+            payloads = await resp.json()
+            assert len(payloads) == 0
+
+    async def test_accounts_list_one(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id = payload["id"]
+
+        async with client.get(
+            url=service_accounts_api.accounts_url,
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPOk.status_code, await resp.text()
+            payloads = await resp.json()
+            assert len(payloads) == 1
+            payload = payloads[0]
+            assert "token" not in payload
+            assert payload["id"] == account_id
+            assert payload["name"] == "test"
+            assert payload["owner"] == regular_user.name
+            assert payload["default_cluster"] == "default"
+            assert payload["role"] == role_name
+            assert datetime.fromisoformat(payload["created_at"])
+            assert not payload["role_deleted"]
+
+    async def test_accounts_list_many(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id1 = payload["id"]
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test2", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id2 = payload["id"]
+
+        async with client.get(
+            url=service_accounts_api.accounts_url,
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPOk.status_code, await resp.text()
+            payload = await resp.json()
+            assert {item["id"] for item in payload} == {account_id1, account_id2}
+
+    async def test_account_delete(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            account_id = payload["id"]
+            token = payload["token"]
+
+        async with client.delete(
+            url=service_accounts_api.account_url(account_id),
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPNoContent.status_code, await resp.text()
+
+        token_data = json.loads(base64.b64decode(token.encode()).decode())
+        auth_token = token_data["token"]
+
+        with pytest.raises(ClientResponseError):
+            await auth_client.get_user(role_name, token=auth_token)

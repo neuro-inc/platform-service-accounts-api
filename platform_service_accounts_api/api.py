@@ -180,7 +180,7 @@ class ServiceAccountsApiHandler:
             owner=username,
         )
         try:
-            account = self.service.create(data)
+            account = await self.service.create(data)
         except ExistsError:
             return json_response(
                 {
