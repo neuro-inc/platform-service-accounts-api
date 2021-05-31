@@ -33,7 +33,7 @@ class ServiceAccountTables:
             "service_accounts",
             metadata,
             sa.Column("id", sa.String(), primary_key=True),
-            sa.Column("name", sa.String(), nullable=False),
+            sa.Column("name", sa.String(), nullable=True),
             sa.Column("owner", sa.String(), nullable=False),
             sa.Column(
                 "created_at", sapg.TIMESTAMP(timezone=True, precision=6), nullable=False

@@ -45,8 +45,11 @@ class InMemoryStorage(Storage):
             yield item
 
     async def check_exists(self, data: ServiceAccountData) -> None:
+        name = data.name
+        if name is None:
+            return
         try:
-            await self.get_by_name(data.name, data.owner)
+            await self.get_by_name(name, data.owner)
         except NotExistsError:
             return
         raise ExistsError

@@ -245,6 +245,22 @@ class TestApi:
         fetched_role = await auth_client.get_user(role_name, token=auth_token)
         assert fetched_role.name == role_name
 
+    async def test_account_create_no_name(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        role_name = await self.make_subrole(regular_user, auth_client)
+
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"role": role_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPCreated.status_code, await resp.text()
+
     async def test_account_create_no_access_to_role(
         self,
         service_accounts_api: ServiceAccountsApiEndpoints,

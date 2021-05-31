@@ -53,6 +53,14 @@ class TestStorage:
         assert self.compare_data(res, created)
         assert res.id == created.id
 
+    async def test_create_get_no_name(self, storage: Storage) -> None:
+        data = await self.gen_data(name=None)
+        created = await storage.create(data)
+        assert self.compare_data(data, created)
+        res = await storage.get(created.id)
+        assert self.compare_data(res, created)
+        assert res.id == created.id
+
     async def test_get_not_exists(self, storage: Storage) -> None:
         with pytest.raises(NotExistsError):
             await storage.get("wrong-id")
@@ -67,12 +75,14 @@ class TestStorage:
     async def test_get_by_name(self, storage: Storage) -> None:
         data = await self.gen_data()
         res = await storage.create(data)
+        assert data.name is not None
         account = await storage.get_by_name(name=data.name, owner=data.owner)
         assert account.id == res.id
 
     async def test_get_by_name_wrong_owner(self, storage: Storage) -> None:
         data = await self.gen_data()
         await storage.create(data)
+        assert data.name is not None
         with pytest.raises(NotExistsError):
             await storage.get_by_name(
                 name=data.name,

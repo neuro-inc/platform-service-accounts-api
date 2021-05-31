@@ -47,7 +47,7 @@ class HasId:
 
 @dataclass(frozen=True)
 class ServiceAccountData:
-    name: str
+    name: Optional[str]
     default_cluster: str
     role: str
     owner: str
