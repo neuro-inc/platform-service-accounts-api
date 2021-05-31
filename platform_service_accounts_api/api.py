@@ -17,6 +17,7 @@ from aiohttp.web import (
 from aiohttp.web_exceptions import (
     HTTPConflict,
     HTTPCreated,
+    HTTPForbidden,
     HTTPNoContent,
     HTTPNotFound,
     HTTPOk,
@@ -37,7 +38,12 @@ from .schema import (
     ServiceAccountSchema,
     ServiceAccountWithTokenSchema,
 )
-from .service import AccountCreateData, AccountsService, ServiceAccount
+from .service import (
+    AccountCreateData,
+    AccountsService,
+    NoAccessToRoleError,
+    ServiceAccount,
+)
 from .storage.base import ExistsError, NotExistsError, Storage
 from .storage.postgres import PostgresStorage
 from .utils import accepts_ndjson, auto_close, ndjson_error_handler
@@ -189,6 +195,8 @@ class ServiceAccountsApiHandler:
                 },
                 status=HTTPConflict.status_code,
             )
+        except NoAccessToRoleError:
+            raise HTTPForbidden
         return aiohttp.web.json_response(
             data=ServiceAccountWithTokenSchema().dump(account),
             status=HTTPCreated.status_code,

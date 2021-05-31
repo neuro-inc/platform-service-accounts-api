@@ -19,6 +19,10 @@ from platform_service_accounts_api.storage.base import (
 logger = logging.getLogger()
 
 
+class NoAccessToRoleError(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class AccountCreateData:
     name: str
@@ -60,6 +64,12 @@ class AccountsService:
         ).decode()
 
     async def create(self, data: AccountCreateData) -> ServiceAccountWithToken:
+        if not await self._auth_client.check_user_permissions(
+            name=data.owner,
+            permissions=[Permission(uri=f"role://{data.role}", action="read")],
+        ):
+            raise NoAccessToRoleError
+
         account = await self._storage.create(
             ServiceAccountData(
                 **asdict(data),

@@ -11,6 +11,7 @@ from yarl import URL
 from platform_service_accounts_api.service import (
     AccountCreateData,
     AccountsService,
+    NoAccessToRoleError,
     ServiceAccount,
 )
 from platform_service_accounts_api.storage.base import NotExistsError
@@ -28,6 +29,7 @@ class MockAuthClient(AuthClient):
                 Cluster("default"),
             ],
         )
+        self.check_perm_return = True
         self._grants: List[Tuple[str, Sequence[Permission]]] = []
         self._revokes: List[Tuple[str, Sequence[str]]] = []
 
@@ -66,6 +68,11 @@ class MockAuthClient(AuthClient):
         token: Optional[str] = None,
     ) -> str:
         return f"token-{name}"
+
+    async def check_user_permissions(
+        self, name: str, permissions: Sequence[Permission], token: Optional[str] = None
+    ) -> bool:
+        return self.check_perm_return
 
 
 class TestService:
@@ -111,6 +118,13 @@ class TestService:
         username, perms = mock_auth_client.grants[0]
         assert username == self.CREATE_DATA.role
         assert perms[0].uri == f"token://service_account/{account.id}"
+
+    async def test_create_no_perm(
+        self, service: AccountsService, mock_auth_client: MockAuthClient
+    ) -> None:
+        mock_auth_client.check_perm_return = False
+        with pytest.raises(NoAccessToRoleError):
+            await service.create(self.CREATE_DATA)
 
     async def test_get(self, service: AccountsService) -> None:
         account = await service.create(self.CREATE_DATA)
