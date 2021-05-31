@@ -5,6 +5,7 @@ from typing import AsyncIterator, Awaitable, Callable
 import aiohttp
 import aiohttp.web
 import aiohttp_cors
+import pkg_resources
 from aiohttp.web import (
     HTTPBadRequest,
     HTTPInternalServerError,
@@ -259,6 +260,17 @@ def _setup_cors(app: aiohttp.web.Application, config: CORSConfig) -> None:
         cors.add(route)
 
 
+package_version = pkg_resources.get_distribution(
+    "platform-service-accounts-api"
+).version
+
+
+async def add_version_to_header(request: Request, response: StreamResponse) -> None:
+    response.headers[
+        "X-Service-Version"
+    ] = f"platform-service-accounts-api/{package_version}"
+
+
 async def create_app(config: Config) -> aiohttp.web.Application:
     app = aiohttp.web.Application(middlewares=[handle_exceptions])
     app["config"] = config
@@ -301,6 +313,8 @@ async def create_app(config: Config) -> aiohttp.web.Application:
     api_v1_app.add_subapp("/service_accounts", service_accounts_app)
 
     app.add_subapp("/api/v1", api_v1_app)
+
+    app.on_response_prepare.append(add_version_to_header)
 
     _setup_cors(app, config.cors)
     if config.enable_docs:
