@@ -2,7 +2,7 @@ import base64
 import json
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import AsyncIterator, Awaitable, Callable
+from typing import AsyncIterator, Callable
 
 import aiohttp
 import pytest
@@ -218,16 +218,17 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
             payload = await resp.json()
-            assert payload["name"] == "test"
+            assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
             assert payload["role"] == role_name
@@ -252,32 +253,25 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"role": role_name, "default_cluster": "default"},
+            json={"default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
+            payload = await resp.json()
+            role_name = payload["role"]
+            token = payload["token"]
 
-    async def test_account_create_no_access_to_role(
-        self,
-        service_accounts_api: ServiceAccountsApiEndpoints,
-        regular_user_factory: Callable[[], Awaitable[_User]],
-        client: aiohttp.ClientSession,
-        auth_client: AuthClient,
-    ) -> None:
-        user1 = await regular_user_factory()
-        user2 = await regular_user_factory()
-        role_name = await self.make_subrole(user1, auth_client)
+        token_data = json.loads(base64.b64decode(token.encode()).decode())
+        assert token_data["cluster"] == "default"
+        assert token_data["url"] == "https://dev.neu.ro/api/v1"
 
-        async with client.post(
-            url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
-            headers=user2.headers,
-        ) as resp:
-            assert resp.status == HTTPForbidden.status_code, await resp.text()
+        auth_token = token_data["token"]
+
+        fetched_role = await auth_client.get_user(role_name, token=auth_token)
+        assert fetched_role.name == role_name
 
     async def test_account_get(
         self,
@@ -286,11 +280,12 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -305,7 +300,7 @@ class TestApi:
             payload = await resp.json()
             assert "token" not in payload
             assert payload["id"] == account_id
-            assert payload["name"] == "test"
+            assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
             assert payload["role"] == role_name
@@ -319,11 +314,12 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -338,7 +334,7 @@ class TestApi:
             payload = await resp.json()
             assert "token" not in payload
             assert payload["id"] == account_id
-            assert payload["name"] == "test"
+            assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
             assert payload["role"] == role_name
@@ -366,11 +362,12 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -387,7 +384,7 @@ class TestApi:
             payload = payloads[0]
             assert "token" not in payload
             assert payload["id"] == account_id
-            assert payload["name"] == "test"
+            assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
             assert payload["role"] == role_name
@@ -401,11 +398,9 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
-
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": "test1", "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -414,7 +409,7 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test2", "role": role_name, "default_cluster": "default"},
+            json={"name": "test2", "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -436,11 +431,12 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -467,11 +463,12 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -496,11 +493,12 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-        role_name = await self.make_subrole(regular_user, auth_client)
+        sa_name = "test"
+        role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test", "role": role_name, "default_cluster": "default"},
+            json={"name": sa_name, "default_cluster": "default"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()

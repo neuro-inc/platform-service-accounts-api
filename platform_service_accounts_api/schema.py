@@ -33,15 +33,15 @@ def query_schema(**kwargs: fields.Field) -> Callable[[F], F]:
 
 class ServiceAccountCreateSchema(Schema):
     name = fields.String(required=False, missing=None)
-    role = fields.String(required=True)
     default_cluster = fields.String(required=True)
 
 
 class ServiceAccountSchema(ServiceAccountCreateSchema):
     id = fields.String(required=True)
+    role = fields.String(required=True)
     owner = fields.String(required=True)
     created_at = fields.AwareDateTime(required=True)
-    role_deleted = fields.Boolean(required=True)
+    role_deleted = fields.Boolean(required=True, default=False)
 
 
 class ServiceAccountWithTokenSchema(ServiceAccountSchema):

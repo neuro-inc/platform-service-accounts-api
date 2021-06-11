@@ -2,15 +2,17 @@ import base64
 import datetime
 import json
 import logging
+import secrets
 from dataclasses import asdict, dataclass
-from typing import AsyncIterator
+from typing import AsyncIterator, Optional
 
 from aiohttp import ClientResponseError
-from neuro_auth_client import AuthClient, Permission
+from neuro_auth_client import User
 from yarl import URL
 
+from platform_service_accounts_api.auth_client import AuthClient
 from platform_service_accounts_api.storage.base import (
-    ServiceAccount as DBServiceAccount,
+    ServiceAccount,
     ServiceAccountData,
     Storage,
 )
@@ -25,15 +27,9 @@ class NoAccessToRoleError(Exception):
 
 @dataclass(frozen=True)
 class AccountCreateData:
-    name: str
+    name: Optional[str]
     default_cluster: str
-    role: str
     owner: str
-
-
-@dataclass(frozen=True)
-class ServiceAccount(DBServiceAccount):
-    role_deleted: bool
 
 
 @dataclass(frozen=True)
@@ -64,35 +60,28 @@ class AccountsService:
         ).decode()
 
     async def create(self, data: AccountCreateData) -> ServiceAccountWithToken:
-        if not await self._auth_client.check_user_permissions(
-            name=data.owner,
-            permissions=[Permission(uri=f"role://{data.role}", action="read")],
-        ):
-            raise NoAccessToRoleError
+        if data.name:
+            role = f"{data.owner}/service-accounts/{data.name}"
+        else:
+            role = f"{data.owner}/service-accounts/{secrets.token_hex(8)}"
 
         account = await self._storage.create(
             ServiceAccountData(
                 **asdict(data),
+                role=role,
                 created_at=datetime.datetime.now(datetime.timezone.utc),
             )
         )
         try:
-            token_uri = self._make_token_uri(account.id)
-            await self._auth_client.grant_user_permissions(
-                data.role, [Permission(uri=token_uri, action="read")]
-            )
-            auth_token = await self._auth_client.get_user_token(
-                data.role, new_token_uri=token_uri
-            )
+            await self._auth_client.add_user(User(name=role))
+            auth_token = await self._auth_client.get_user_token(role)
             token = self._encode_token(auth_token, account.default_cluster)
         except Exception:
             await self._storage.delete(account.id)
             raise
-        return ServiceAccountWithToken(
-            **asdict(account), role_deleted=False, token=token
-        )
+        return ServiceAccountWithToken(**asdict(account), token=token)
 
-    async def _check_role_deleted(self, role: str) -> bool:
+    async def _check_no_such_role(self, role: str) -> bool:
         try:
             await self._auth_client.get_user(role)
             return False
@@ -100,35 +89,24 @@ class AccountsService:
             return True
 
     async def get(self, id: str) -> ServiceAccount:
-        account = await self._storage.get(id)
-        return ServiceAccount(
-            **asdict(account), role_deleted=await self._check_role_deleted(account.role)
-        )
+        return await self._storage.get(id)
 
     async def get_by_name(self, name: str, owner: str) -> ServiceAccount:
-        account = await self._storage.get_by_name(name, owner)
-        return ServiceAccount(
-            **asdict(account), role_deleted=await self._check_role_deleted(account.role)
-        )
+        return await self._storage.get_by_name(name, owner)
 
     async def list(self, owner: str) -> AsyncIterator[ServiceAccount]:
         async for account in self._storage.list(owner):
             yield ServiceAccount(
                 **asdict(account),
-                role_deleted=await self._check_role_deleted(account.role),
             )
 
     async def delete(self, id: str) -> None:
         account = await self._storage.get(id)
         try:
-            await self._auth_client.revoke_user_permissions(
-                account.role, [self._make_token_uri(id)]
-            )
+            await self._auth_client.delete_user(account.role)
         except ClientResponseError as e:
             if e.status == 404:
                 pass  # Role was deleted
-            elif e.status == 400 and e.message == "Operation has no effect":
-                pass  # Token permission was already revoked
             else:
                 raise
         await self._storage.delete(id)

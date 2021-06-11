@@ -25,10 +25,11 @@ from aiohttp.web_exceptions import (
 )
 from aiohttp_apispec import docs, request_schema, response_schema, setup_aiohttp_apispec
 from aiohttp_security import check_authorized
-from neuro_auth_client import AuthClient, User
+from neuro_auth_client import User
 from neuro_auth_client.security import AuthScheme, setup_security
 from platform_logging import init_logging, notrace, setup_sentry, setup_zipkin_tracer
 
+from .auth_client import AuthClient
 from .config import Config, CORSConfig, PlatformAuthConfig
 from .config_factory import EnvironConfigFactory
 from .identity import untrusted_user
