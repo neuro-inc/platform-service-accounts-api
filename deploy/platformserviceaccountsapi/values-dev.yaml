@@ -17,7 +17,7 @@ platform:
     valueFrom:
       secretKeyRef:
         name: platformservices-secret
-        key: compute_token
+        key: admin_token
 
 postgres:
   dsn:
