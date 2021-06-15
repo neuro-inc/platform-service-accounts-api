@@ -52,7 +52,7 @@ docker_build:
 	docker build \
 		--build-arg PIP_EXTRA_INDEX_URL \
 		--build-arg DIST_FILENAME=`python setup.py --fullname`.tar.gz \
-		-t $(IMAGE) .
+		-t $(IMAGE_NAME):latest .
 
 docker_push: docker_build
 	docker tag $(IMAGE_NAME):latest $(IMAGE_REPO):$(TAG)
