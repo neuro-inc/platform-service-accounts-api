@@ -28,7 +28,7 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     setup_requires=setup_requires,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     entry_points={
         "console_scripts": [
             "platform-service-accounts-api=platform_service_accounts_api.api:main"
