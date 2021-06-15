@@ -151,7 +151,6 @@ jobs:
       AZURE_REGION: ${{ secrets.AZURE_STAGING_REGION }}
       AZURE_RG_NAME: ${{ secrets.AZURE_STAGING_RG_NAME }}
       CLUSTER_NAME: staging
-      HELM_ENV: staging
       HELM_VERSION: ${{ secrets.HELM_VERSION }}
       CLOUD_PROVIDER: ${{ secrets.CLOUD_PROVIDER_STAGING }}
     steps:
