@@ -41,7 +41,7 @@ class ServiceAccountSchema(ServiceAccountCreateSchema):
     role = fields.String(required=True)
     owner = fields.String(required=True)
     created_at = fields.AwareDateTime(required=True)
-    role_deleted = fields.Boolean(required=True, default=False)
+    role_deleted = fields.Boolean(required=True, dump_default=False)
 
 
 class ServiceAccountWithTokenSchema(ServiceAccountSchema):
