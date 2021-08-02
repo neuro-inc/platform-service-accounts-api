@@ -32,7 +32,7 @@ def query_schema(**kwargs: fields.Field) -> Callable[[F], F]:
 
 
 class ServiceAccountCreateSchema(Schema):
-    name = fields.String(required=False, missing=None)
+    name = fields.String(required=False, load_default=None)
     default_cluster = fields.String(required=True)
 
 
