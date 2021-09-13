@@ -6,10 +6,9 @@ from typing import List, Optional
 
 import pytest
 from aiohttp import ClientResponseError
-from neuro_auth_client import Cluster, User
+from neuro_auth_client import AuthClient, Cluster, User
 from yarl import URL
 
-from platform_service_accounts_api.auth_client import AuthClient
 from platform_service_accounts_api.service import AccountCreateData, AccountsService
 from platform_service_accounts_api.storage.base import NotExistsError, ServiceAccount
 from platform_service_accounts_api.storage.in_memory import InMemoryStorage

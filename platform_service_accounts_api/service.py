@@ -7,10 +7,9 @@ from dataclasses import asdict, dataclass
 from typing import AsyncIterator, Optional
 
 from aiohttp import ClientResponseError
-from neuro_auth_client import User
+from neuro_auth_client import AuthClient, User
 from yarl import URL
 
-from platform_service_accounts_api.auth_client import AuthClient
 from platform_service_accounts_api.storage.base import (
     ServiceAccount,
     ServiceAccountData,
