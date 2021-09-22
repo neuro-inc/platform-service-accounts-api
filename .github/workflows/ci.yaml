@@ -79,7 +79,7 @@ jobs:
     - name: Upload image artifact
       uses: neuro-inc/upload-image-action@v21.9.2
       with:
-        image: platformsecrets
+        image: platformserviceaccountsapi
         token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy_dev:
