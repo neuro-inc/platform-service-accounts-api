@@ -2,11 +2,14 @@ image:
   repository: $IMAGE_REPO
   tag: $IMAGE_TAG
 imagePullSecrets: []
+
 command: []
 args: []
+
 port: 8080
 
 replicas: 2
+
 resources:
   requests:
     cpu: '0.1'
@@ -18,10 +21,12 @@ resources:
 ingress:
   enabled: false
 
-postgres-db-init:
-  image:
-    repository: $DOCKER_SERVER/bitnami/postgresql
+platform:
+  apiPublicUrl: https://staging.neu.ro/api/v1
+  authUrl: http://platform-auth:8080
+  token: {}
 
+postgres-db-init:
   adminDsn: {}
   migrationsRunnerDsn: {}
   serviceDsn: {}
@@ -41,13 +46,9 @@ zipkin: {}
 
 sentry: {}
 
-authUrl: http://platformauthapi:8080
-
-platform:
-  token: {}
-
 postgres:
   dsn: {}
 
-corsOrigins:
+cors: {}
+
 enableDocs: false
