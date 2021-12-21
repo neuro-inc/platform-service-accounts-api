@@ -3,8 +3,9 @@ import datetime
 import json
 import logging
 import secrets
+from collections.abc import AsyncIterator
 from dataclasses import asdict, dataclass
-from typing import AsyncIterator, Optional
+from typing import Optional
 
 from aiohttp import ClientResponseError
 from neuro_auth_client import AuthClient, User

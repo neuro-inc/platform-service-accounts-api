@@ -1,8 +1,8 @@
 import base64
 import json
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 from aiohttp import ClientResponseError
@@ -10,7 +10,10 @@ from neuro_auth_client import AuthClient, Cluster, User
 from yarl import URL
 
 from platform_service_accounts_api.service import AccountCreateData, AccountsService
-from platform_service_accounts_api.storage.base import NotExistsError, ServiceAccount
+from platform_service_accounts_api.storage.base import (
+    NotExistsError,
+    ServiceAccountData,
+)
 from platform_service_accounts_api.storage.in_memory import InMemoryStorage
 
 
@@ -25,8 +28,8 @@ class MockAuthClient(AuthClient):
                 Cluster("default"),
             ],
         )
-        self.created_users: List[User] = []
-        self.deleted_users: List[str] = []
+        self.created_users: list[User] = []
+        self.deleted_users: list[str] = []
 
     async def add_user(self, user: User, token: Optional[str] = None) -> None:
         self.created_users.append(user)
@@ -59,6 +62,17 @@ class TestService:
         owner="testowner",
         default_cluster="default",
     )
+
+    def compare_data(
+        self, data1: ServiceAccountData, data2: ServiceAccountData
+    ) -> None:
+        d1 = asdict(data1)
+        d1.pop("id", None)
+        d1.pop("token", None)
+        d2 = asdict(data2)
+        d2.pop("id", None)
+        d2.pop("token", None)
+        assert d1 == d2
 
     @pytest.fixture
     def mock_auth_client(self) -> MockAuthClient:
@@ -105,12 +119,12 @@ class TestService:
     async def test_get(self, service: AccountsService) -> None:
         account = await service.create(self.CREATE_DATA)
         get_res = await service.get(account.id)
-        assert ServiceAccount.__eq__(account, get_res)
+        self.compare_data(account, get_res)
 
     async def test_list(self, service: AccountsService) -> None:
         account = await service.create(self.CREATE_DATA)
         async for list_res in service.list(owner=account.owner):
-            assert ServiceAccount.__eq__(account, list_res)
+            self.compare_data(account, list_res)
 
     async def test_list_empty(self, service: AccountsService) -> None:
         async for _ in service.list(owner="test"):

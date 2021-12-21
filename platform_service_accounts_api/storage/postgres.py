@@ -1,7 +1,8 @@
 import json
 import uuid
+from collections.abc import AsyncIterator
 from dataclasses import asdict, dataclass
-from typing import Any, AsyncIterator, Dict, Optional
+from typing import Any, Optional
 
 import asyncpgsa
 import sqlalchemy as sa
@@ -76,7 +77,7 @@ class PostgresStorage(Storage):
     def _gen_id(self) -> str:
         return f"{self.ID_PREFIX}-{uuid.uuid4()}"
 
-    def _to_values(self, item: ServiceAccount) -> Dict[str, Any]:
+    def _to_values(self, item: ServiceAccount) -> dict[str, Any]:
         payload = asdict(item)
         return {
             "id": payload.pop("id"),

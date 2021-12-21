@@ -1,5 +1,5 @@
 import secrets
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from typing import Any
 
@@ -29,8 +29,12 @@ class TestStorage:
 
     def compare_data(
         self, data1: ServiceAccountData, data2: ServiceAccountData
-    ) -> bool:
-        return ServiceAccountData.__eq__(data1, data2)
+    ) -> None:
+        d1 = asdict(data1)
+        d1.pop("id", None)
+        d2 = asdict(data2)
+        d2.pop("id", None)
+        assert d1 == d2
 
     async def gen_data(self, **kwargs: Any) -> ServiceAccountData:
         data = ServiceAccountData(
@@ -48,17 +52,17 @@ class TestStorage:
     async def test_create_get(self, storage: Storage) -> None:
         data = await self.gen_data()
         created = await storage.create(data)
-        assert self.compare_data(data, created)
+        self.compare_data(data, created)
         res = await storage.get(created.id)
-        assert self.compare_data(res, created)
+        self.compare_data(res, created)
         assert res.id == created.id
 
     async def test_create_get_no_name(self, storage: Storage) -> None:
         data = await self.gen_data(name=None)
         created = await storage.create(data)
-        assert self.compare_data(data, created)
+        self.compare_data(data, created)
         res = await storage.get(created.id)
-        assert self.compare_data(res, created)
+        self.compare_data(res, created)
         assert res.id == created.id
 
     async def test_get_not_exists(self, storage: Storage) -> None:

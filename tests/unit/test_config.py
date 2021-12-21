@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import ANY
 
 import pytest
@@ -36,7 +36,7 @@ def token_path(tmp_path: Path) -> str:
 
 
 def test_create(cert_authority_path: str, token_path: str) -> None:
-    environ: Dict[str, Any] = {
+    environ: dict[str, Any] = {
         "NP_SERVICE_ACCOUNTS_API_HOST": "0.0.0.0",
         "NP_SERVICE_ACCOUNTS_API_PORT": 8080,
         "NP_SERVICE_ACCOUNTS_API_PLATFORM_AUTH_URL": "http://platformauthapi/api/v1",

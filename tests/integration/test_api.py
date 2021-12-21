@@ -1,8 +1,8 @@
 import base64
 import json
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import AsyncIterator, Callable
 
 import aiohttp
 import pytest
