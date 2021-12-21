@@ -2,7 +2,7 @@ import base64
 import json
 from dataclasses import replace
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 from aiohttp import ClientResponseError
@@ -25,8 +25,8 @@ class MockAuthClient(AuthClient):
                 Cluster("default"),
             ],
         )
-        self.created_users: List[User] = []
-        self.deleted_users: List[str] = []
+        self.created_users: list[User] = []
+        self.deleted_users: list[str] = []
 
     async def add_user(self, user: User, token: Optional[str] = None) -> None:
         self.created_users.append(user)

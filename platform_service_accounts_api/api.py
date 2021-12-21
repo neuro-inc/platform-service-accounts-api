@@ -1,11 +1,11 @@
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import AsyncIterator, Awaitable, Callable
+from importlib.metadata import version
 
 import aiohttp
 import aiohttp.web
 import aiohttp_cors
-import pkg_resources
 from aiohttp.web import (
     HTTPBadRequest,
     HTTPInternalServerError,
@@ -260,9 +260,7 @@ def _setup_cors(app: aiohttp.web.Application, config: CORSConfig) -> None:
         cors.add(route)
 
 
-package_version = pkg_resources.get_distribution(
-    "platform-service-accounts-api"
-).version
+package_version = version(__package__)
 
 
 async def add_version_to_header(request: Request, response: StreamResponse) -> None:

@@ -1,5 +1,6 @@
 import secrets
-from typing import AsyncIterator, Dict, Optional
+from collections.abc import AsyncIterator
+from typing import Optional
 
 from .base import (
     ExistsError,
@@ -12,7 +13,7 @@ from .base import (
 
 class InMemoryStorage(Storage):
     def __init__(self) -> None:
-        self._items: Dict[str, ServiceAccount] = {}
+        self._items: dict[str, ServiceAccount] = {}
 
     def _gen_id(self) -> str:
         return secrets.token_hex(8)
