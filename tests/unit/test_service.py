@@ -65,12 +65,12 @@ class TestService:
 
     def compare_data(
         self, data1: ServiceAccountData, data2: ServiceAccountData
-    ) -> bool:
+    ) -> None:
         d1 = asdict(data1)
         d1.pop("id", None)
         d2 = asdict(data2)
         d2.pop("id", None)
-        return d1 == d2
+        assert d1 == d2
 
     @pytest.fixture
     def mock_auth_client(self) -> MockAuthClient:
@@ -117,12 +117,12 @@ class TestService:
     async def test_get(self, service: AccountsService) -> None:
         account = await service.create(self.CREATE_DATA)
         get_res = await service.get(account.id)
-        assert self.compare_data(account, get_res)
+        self.compare_data(account, get_res)
 
     async def test_list(self, service: AccountsService) -> None:
         account = await service.create(self.CREATE_DATA)
         async for list_res in service.list(owner=account.owner):
-            assert self.compare_data(account, list_res)
+            self.compare_data(account, list_res)
 
     async def test_list_empty(self, service: AccountsService) -> None:
         async for _ in service.list(owner="test"):
