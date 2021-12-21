@@ -1,5 +1,5 @@
 import secrets
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from typing import Any
 
@@ -30,7 +30,11 @@ class TestStorage:
     def compare_data(
         self, data1: ServiceAccountData, data2: ServiceAccountData
     ) -> bool:
-        return ServiceAccountData.__eq__(data1, data2)
+        d1 = asdict(data1)
+        d1.pop("id", None)
+        d2 = asdict(data2)
+        d2.pop("id", None)
+        return d1 == d2
 
     async def gen_data(self, **kwargs: Any) -> ServiceAccountData:
         data = ServiceAccountData(
