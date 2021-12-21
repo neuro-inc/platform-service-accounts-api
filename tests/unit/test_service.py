@@ -68,8 +68,10 @@ class TestService:
     ) -> None:
         d1 = asdict(data1)
         d1.pop("id", None)
+        d1.pop("token", None)
         d2 = asdict(data2)
         d2.pop("id", None)
+        d2.pop("token", None)
         assert d1 == d2
 
     @pytest.fixture
