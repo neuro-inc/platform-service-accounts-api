@@ -17,7 +17,6 @@ from platform_service_accounts_api.storage.base import (
     Storage,
 )
 
-
 logger = logging.getLogger()
 
 

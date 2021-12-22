@@ -6,7 +6,6 @@ import aiohttp.web
 from aiohttp_apispec import querystring_schema
 from marshmallow import Schema, fields
 
-
 F = TypeVar("F", bound=Callable[..., Any])
 
 

@@ -49,7 +49,6 @@ from .storage.base import ExistsError, NotExistsError, Storage
 from .storage.postgres import PostgresStorage
 from .utils import accepts_ndjson, auto_close, ndjson_error_handler
 
-
 logger = logging.getLogger(__name__)
 
 
