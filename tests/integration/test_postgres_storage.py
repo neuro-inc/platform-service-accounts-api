@@ -6,8 +6,6 @@ from platform_service_accounts_api.storage.postgres import PostgresStorage
 
 from tests.unit.test_in_memory_storage import TestStorage as _TestAStorage
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def postgres_storage(postgres_pool: Pool) -> PostgresStorage:

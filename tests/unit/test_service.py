@@ -16,8 +16,6 @@ from platform_service_accounts_api.storage.base import (
 )
 from platform_service_accounts_api.storage.in_memory import InMemoryStorage
 
-pytestmark = pytest.mark.asyncio
-
 
 class MockAuthClient(AuthClient):
     def __init__(self) -> None:
