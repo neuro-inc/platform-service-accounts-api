@@ -17,7 +17,6 @@ from platform_service_accounts_api.storage.base import (
 from platform_service_accounts_api.storage.in_memory import InMemoryStorage
 
 
-
 class MockAuthClient(AuthClient):
     def __init__(self) -> None:
         self.user_to_return: Optional[User] = User(
