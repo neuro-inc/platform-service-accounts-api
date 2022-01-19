@@ -1,4 +1,3 @@
-import pytest
 from asyncpg.pool import Pool
 
 
