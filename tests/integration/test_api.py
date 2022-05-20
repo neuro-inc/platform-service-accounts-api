@@ -24,9 +24,6 @@ from .auth import _User
 from .conftest import ApiAddress, create_local_app_server
 
 
-pytestmark = pytest.mark.asyncio
-
-
 @dataclass(frozen=True)
 class ServiceAccountsApiEndpoints:
     address: ApiAddress

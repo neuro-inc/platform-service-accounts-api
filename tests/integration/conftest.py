@@ -20,7 +20,6 @@ from platform_service_accounts_api.config import (
     ServerConfig,
 )
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -16,7 +16,6 @@ from platform_service_accounts_api.config import (
 )
 from platform_service_accounts_api.config_factory import EnvironConfigFactory
 
-
 CA_DATA_PEM = "this-is-certificate-authority-public-key"
 TOKEN = "this-is-token"
 

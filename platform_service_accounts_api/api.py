@@ -49,7 +49,6 @@ from .storage.base import ExistsError, NotExistsError, Storage
 from .storage.postgres import PostgresStorage
 from .utils import accepts_ndjson, auto_close, ndjson_error_handler
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -118,7 +117,7 @@ class ServiceAccountsApiHandler:
     ) -> aiohttp.web.StreamResponse:
         username = await check_authorized(request)
         bake_images = self.service.list(owner=username)
-        async with auto_close(bake_images):
+        async with auto_close(bake_images):  # type: ignore[arg-type]
             if accepts_ndjson(request):
                 response = aiohttp.web.StreamResponse()
                 response.headers["Content-Type"] = "application/x-ndjson"

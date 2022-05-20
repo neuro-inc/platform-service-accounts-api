@@ -17,9 +17,6 @@ from platform_service_accounts_api.storage.base import (
 from platform_service_accounts_api.storage.in_memory import InMemoryStorage
 
 
-pytestmark = pytest.mark.asyncio
-
-
 class MockAuthClient(AuthClient):
     def __init__(self) -> None:
         self.user_to_return: Optional[User] = User(
@@ -128,7 +125,7 @@ class TestService:
 
     async def test_list_empty(self, service: AccountsService) -> None:
         async for _ in service.list(owner="test"):
-            assert False
+            raise AssertionError
 
     async def test_delete(
         self, service: AccountsService, mock_auth_client: MockAuthClient
