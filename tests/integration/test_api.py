@@ -9,6 +9,7 @@ import pytest
 from aiohttp import ClientResponseError
 from aiohttp.web import HTTPOk
 from aiohttp.web_exceptions import (
+    HTTPBadRequest,
     HTTPCreated,
     HTTPForbidden,
     HTTPNoContent,
@@ -208,14 +209,22 @@ class TestApi:
         await auth_client.add_user(role)
         return role_name
 
+    @pytest.mark.parametrize(
+        "sa_name",
+        [
+            "test-name",
+            "test--name",
+            "test.name",
+        ],
+    )
     async def test_account_create(
         self,
         service_accounts_api: ServiceAccountsApiEndpoints,
         regular_user: _User,
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
+        sa_name: str,
     ) -> None:
-        sa_name = "test"
         role_name = f"{regular_user.name}/service-accounts/{sa_name}"
 
         async with client.post(
@@ -269,6 +278,54 @@ class TestApi:
 
         fetched_role = await auth_client.get_user(role_name, token=auth_token)
         assert fetched_role.name == role_name
+
+    @pytest.mark.parametrize(
+        "sa_name",
+        [
+            "test_name",
+            "test/name",
+            "test..name",
+            "test-.name",
+            "test.-name",
+            "-test",
+            "test-",
+            ".test",
+            "test.",
+            "",
+        ],
+    )
+    async def test_account_create_invalid_name(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+        sa_name: str,
+    ) -> None:
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={"name": sa_name, "default_cluster": "default"},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPBadRequest.status_code, await resp.text()
+            payload = await resp.json()
+            assert "Invalid service account name" in payload["error"]
+
+    async def test_account_create_no_cluster(
+        self,
+        service_accounts_api: ServiceAccountsApiEndpoints,
+        regular_user: _User,
+        client: aiohttp.ClientSession,
+        auth_client: AuthClient,
+    ) -> None:
+        async with client.post(
+            url=service_accounts_api.accounts_url,
+            json={},
+            headers=regular_user.headers,
+        ) as resp:
+            assert resp.status == HTTPBadRequest.status_code, await resp.text()
+            payload = await resp.json()
+            assert "Missing data for required field" in payload["error"]
 
     async def test_account_get(
         self,
