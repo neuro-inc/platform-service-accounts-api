@@ -1,10 +1,11 @@
 import functools
+import re
 from collections.abc import Callable
 from typing import Any, TypeVar
 
 import aiohttp.web
 from aiohttp_apispec import querystring_schema
-from marshmallow import Schema, fields
+from marshmallow import Schema, ValidationError, fields
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -31,8 +32,18 @@ def query_schema(**kwargs: fields.Field) -> Callable[[F], F]:
     return _decorator
 
 
+NAME_PATTERN = re.compile(
+    r"[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*"
+)
+
+
+def validate_name(name: str) -> None:
+    if not NAME_PATTERN.fullmatch(name):
+        raise ValidationError("Invalid service account name")
+
+
 class ServiceAccountCreateSchema(Schema):
-    name = fields.String(required=False, missing=None)
+    name = fields.String(required=False, missing=None, validate=validate_name)
     default_cluster = fields.String(required=True)
 
 

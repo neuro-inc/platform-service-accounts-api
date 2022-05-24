@@ -25,6 +25,7 @@ from aiohttp.web_exceptions import (
 )
 from aiohttp_apispec import docs, request_schema, response_schema, setup_aiohttp_apispec
 from aiohttp_security import check_authorized
+from marshmallow import ValidationError
 from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import AuthScheme, setup_security
 from neuro_logging import init_logging, notrace, setup_sentry, setup_zipkin_tracer
@@ -210,6 +211,9 @@ async def handle_exceptions(
     try:
         return await handler(request)
     except ValueError as e:
+        payload = {"error": str(e)}
+        return json_response(payload, status=HTTPBadRequest.status_code)
+    except ValidationError as e:
         payload = {"error": str(e)}
         return json_response(payload, status=HTTPBadRequest.status_code)
     except aiohttp.web.HTTPException:
