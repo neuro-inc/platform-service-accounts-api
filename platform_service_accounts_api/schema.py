@@ -43,7 +43,7 @@ def validate_name(name: str) -> None:
 
 
 class ServiceAccountCreateSchema(Schema):
-    name = fields.String(required=False, missing=None, validate=validate_name)
+    name = fields.String(required=False, load_default=None, validate=validate_name)
     default_cluster = fields.String(required=True)
 
 
@@ -52,7 +52,7 @@ class ServiceAccountSchema(ServiceAccountCreateSchema):
     role = fields.String(required=True)
     owner = fields.String(required=True)
     created_at = fields.AwareDateTime(required=True)
-    role_deleted = fields.Boolean(required=True, default=False)
+    role_deleted = fields.Boolean(required=True, dump_default=False)
 
 
 class ServiceAccountWithTokenSchema(ServiceAccountSchema):
