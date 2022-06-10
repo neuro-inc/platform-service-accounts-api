@@ -16,7 +16,7 @@ from aiohttp.web_exceptions import (
     HTTPNotFound,
     HTTPUnauthorized,
 )
-from neuro_auth_client import AuthClient, Cluster, User
+from neuro_auth_client import AuthClient, User
 
 from platform_service_accounts_api.api import create_app
 from platform_service_accounts_api.config import Config
@@ -205,7 +205,7 @@ class TestApi:
 
     async def make_subrole(self, user: _User, auth_client: AuthClient) -> str:
         role_name = f"{user.name}/roles/test"
-        role = User(name=role_name, clusters=[Cluster(name="default")])
+        role = User(name=role_name)
         await auth_client.add_user(role)
         return role_name
 
