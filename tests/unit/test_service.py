@@ -6,7 +6,7 @@ from typing import Optional
 
 import pytest
 from aiohttp import ClientResponseError
-from neuro_auth_client import AuthClient, Cluster, User
+from neuro_auth_client import AuthClient, User
 from yarl import URL
 
 from platform_service_accounts_api.service import AccountCreateData, AccountsService
@@ -19,12 +19,7 @@ from platform_service_accounts_api.storage.in_memory import InMemoryStorage
 
 class MockAuthClient(AuthClient):
     def __init__(self) -> None:
-        self.user_to_return: Optional[User] = User(
-            name="testuser",
-            clusters=[
-                Cluster("default"),
-            ],
-        )
+        self.user_to_return: Optional[User] = User(name="testuser")
         self.created_users: list[User] = []
         self.deleted_users: list[str] = []
 

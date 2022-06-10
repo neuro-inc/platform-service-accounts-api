@@ -13,7 +13,7 @@ from docker import DockerClient
 from docker.errors import NotFound as ContainerNotFound
 from docker.models.containers import Container
 from jose import jwt
-from neuro_auth_client import AuthClient, Cluster, User
+from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import JWT_IDENTITY_CLAIM_OPTIONS
 from yarl import URL
 
@@ -172,12 +172,11 @@ async def regular_user_factory(
     auth_client: AuthClient,
     token_factory: Callable[[str], str],
     admin_token: str,
-    cluster_name: str,
 ) -> AsyncIterator[Callable[[Optional[str]], Awaitable[_User]]]:
     async def _factory(name: Optional[str] = None) -> _User:
         if not name:
             name = f"user-{random_name()}"
-        user = User(name=name, clusters=[Cluster(name=cluster_name)])
+        user = User(name=name)
         await auth_client.add_user(user, token=admin_token)
         return _User(name=user.name, token=token_factory(user.name))
 
