@@ -19,33 +19,32 @@ postgres:
   dsn:
     valueFrom:
       secretKeyRef:
-        name: platformserviceaccountsapi-postgres
-        key: platformserviceaccountsapi-service-dsn
+        name: platform-service-accounts-postgres
+        key: service-dsn
 
 postgres-db-init:
   adminDsn:
     valueFrom:
       secretKeyRef:
-        name: postgres
-        key: admin-dsn
+        name: platform-postgresql
+        key: postgresql-dsn
   migrationsRunnerDsn:
     valueFrom:
       secretKeyRef:
-        name: platformserviceaccountsapi-postgres
-        key: platformserviceaccountsapi-migrations-dsn
+        name: platform-service-accounts-postgres
+        key: migrations-dsn
   serviceDsn:
     valueFrom:
       secretKeyRef:
-        name: platformserviceaccountsapi-postgres
-        key: platformserviceaccountsapi-service-dsn
-
+        name: platform-service-accounts-postgres
+        key: service-dsn
   migrations:
     env:
-      - name: NP_DB_POSTGRES_DSN
-        valueFrom:
-          secretKeyRef:
-            name: platformserviceaccountsapi-postgres
-            key: platformserviceaccountsapi-migrations-dsn
+    - name: NP_DB_POSTGRES_DSN
+      valueFrom:
+        secretKeyRef:
+          name: platform-service-accounts-postgres
+          key: migrations-dsn
 
 
 cors:
