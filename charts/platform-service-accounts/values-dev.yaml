@@ -46,7 +46,6 @@ postgres-db-init:
           name: platform-service-accounts-postgres
           key: migrations-dsn
 
-
 cors:
   origins:
   - '*'
