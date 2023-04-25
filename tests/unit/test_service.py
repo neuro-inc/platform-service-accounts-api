@@ -54,6 +54,7 @@ class TestService:
         owner="testowner",
         default_cluster="default",
         default_project="default-project",
+        default_org=None,
     )
 
     def compare_data(

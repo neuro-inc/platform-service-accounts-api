@@ -53,6 +53,7 @@ class ServiceAccountData:
     owner: str
     created_at: datetime.datetime
     default_project: str
+    default_org: Optional[str]
 
 
 @dataclass(frozen=True)

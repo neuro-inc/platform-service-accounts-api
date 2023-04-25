@@ -46,6 +46,7 @@ class ServiceAccountCreateSchema(Schema):
     name = fields.String(required=False, load_default=None, validate=validate_name)
     default_cluster = fields.String(required=True)
     default_project = fields.String(required=True)
+    default_org = fields.String(required=False)
 
 
 class ServiceAccountSchema(ServiceAccountCreateSchema):

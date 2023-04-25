@@ -30,6 +30,7 @@ class AccountCreateData:
     default_cluster: str
     owner: str
     default_project: str
+    default_org: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -49,16 +50,15 @@ class AccountsService:
         return f"token://service_account/{account_id}"
 
     def _encode_token(self, auth_token: str, account: ServiceAccount) -> str:
-        return base64.b64encode(
-            json.dumps(
-                {
-                    "token": auth_token,
-                    "cluster": account.default_cluster,
-                    "url": str(self._api_base_url),
-                    "project_name": account.default_project,
-                }
-            ).encode()
-        ).decode()
+        token = {
+            "token": auth_token,
+            "cluster": account.default_cluster,
+            "url": str(self._api_base_url),
+            "project_name": account.default_project,
+        }
+        if account.default_org:
+            token["org_name"] = account.default_org
+        return base64.b64encode(json.dumps(token).encode()).decode()
 
     async def create(self, data: AccountCreateData) -> ServiceAccountWithToken:
         if data.name:
