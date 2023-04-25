@@ -53,6 +53,7 @@ class TestService:
         name="test",
         owner="testowner",
         default_cluster="default",
+        default_project="default-project",
     )
 
     def compare_data(
@@ -99,6 +100,7 @@ class TestService:
         assert token_data["token"] == f"token-{expected_role}"
         assert token_data["cluster"] == self.CREATE_DATA.default_cluster
         assert token_data["url"] == "https://dev.neu.ro/api/v1"
+        assert token_data["project_name"] == self.CREATE_DATA.default_project
         assert mock_auth_client.created_users[0].name == expected_role
 
     async def test_create_no_name(

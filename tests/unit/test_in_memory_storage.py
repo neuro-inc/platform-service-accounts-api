@@ -39,6 +39,7 @@ class TestStorage:
             owner=secrets.token_hex(8),
             role=secrets.token_hex(8),
             default_cluster=secrets.token_hex(8),
+            default_project=secrets.token_hex(8),
             created_at=datetime.now(timezone.utc),
         )
         # Updating this way so constructor call is typechecked properly

@@ -229,7 +229,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -246,6 +250,7 @@ class TestApi:
         token_data = json.loads(base64.b64decode(token.encode()).decode())
         assert token_data["cluster"] == "default"
         assert token_data["url"] == "https://dev.neu.ro/api/v1"
+        assert token_data["project_name"] == "some-project"
 
         auth_token = token_data["token"]
 
@@ -262,7 +267,7 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"default_cluster": "default"},
+            json={"default_cluster": "default", "default_project": "some-project"},
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -273,6 +278,7 @@ class TestApi:
         token_data = json.loads(base64.b64decode(token.encode()).decode())
         assert token_data["cluster"] == "default"
         assert token_data["url"] == "https://dev.neu.ro/api/v1"
+        assert token_data["project_name"] == "some-project"
 
         auth_token = token_data["token"]
 
@@ -304,7 +310,11 @@ class TestApi:
     ) -> None:
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPBadRequest.status_code, await resp.text()
@@ -339,7 +349,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -357,6 +371,7 @@ class TestApi:
             assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
+            assert payload["default_project"] == "some-project"
             assert payload["role"] == role_name
             assert datetime.fromisoformat(payload["created_at"])
             assert not payload["role_deleted"]
@@ -373,7 +388,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -391,6 +410,7 @@ class TestApi:
             assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
+            assert payload["default_project"] == "some-project"
             assert payload["role"] == role_name
             assert datetime.fromisoformat(payload["created_at"])
             assert not payload["role_deleted"]
@@ -421,7 +441,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -441,6 +465,7 @@ class TestApi:
             assert payload["name"] == sa_name
             assert payload["owner"] == regular_user.name
             assert payload["default_cluster"] == "default"
+            assert payload["default_project"] == "some-project"
             assert payload["role"] == role_name
             assert datetime.fromisoformat(payload["created_at"])
             assert not payload["role_deleted"]
@@ -454,7 +479,11 @@ class TestApi:
     ) -> None:
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test1", "default_cluster": "default"},
+            json={
+                "name": "test1",
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -463,7 +492,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": "test2", "default_cluster": "default"},
+            json={
+                "name": "test2",
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -490,7 +523,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -522,7 +559,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()
@@ -552,7 +593,11 @@ class TestApi:
 
         async with client.post(
             url=service_accounts_api.accounts_url,
-            json={"name": sa_name, "default_cluster": "default"},
+            json={
+                "name": sa_name,
+                "default_cluster": "default",
+                "default_project": "some-project",
+            },
             headers=regular_user.headers,
         ) as resp:
             assert resp.status == HTTPCreated.status_code, await resp.text()

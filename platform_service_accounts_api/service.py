@@ -29,6 +29,7 @@ class AccountCreateData:
     name: Optional[str]
     default_cluster: str
     owner: str
+    default_project: str
 
 
 @dataclass(frozen=True)
@@ -47,13 +48,14 @@ class AccountsService:
     def _make_token_uri(self, account_id: str) -> str:
         return f"token://service_account/{account_id}"
 
-    def _encode_token(self, auth_token: str, default_cluster: str) -> str:
+    def _encode_token(self, auth_token: str, account: ServiceAccount) -> str:
         return base64.b64encode(
             json.dumps(
                 {
                     "token": auth_token,
-                    "cluster": default_cluster,
+                    "cluster": account.default_cluster,
                     "url": str(self._api_base_url),
+                    "project_name": account.default_project,
                 }
             ).encode()
         ).decode()
@@ -74,7 +76,7 @@ class AccountsService:
         try:
             await self._auth_client.add_user(User(name=role))
             auth_token = await self._auth_client.get_user_token(role)
-            token = self._encode_token(auth_token, account.default_cluster)
+            token = self._encode_token(auth_token, account)
         except Exception:
             await self._storage.delete(account.id)
             raise
