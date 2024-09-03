@@ -71,7 +71,11 @@ jobs:
   deploy_dev:
     name: Deploy on dev
     needs: release
+<<<<<<< HEAD
     uses: neuro-inc/reuse/.github/workflows/deploy-dev.yaml@v24.9.0
+=======
+    uses: neuro-inc/reuse/.github/workflows/deploy-dev.yaml@v0.0.33
+>>>>>>> f6baba3 (feat(apolo-dev): new workflow tag for apolo-dev workloads deployment)
     with:
       helm_charts: platform-service-accounts
       version: ${{ needs.release.outputs.version }}
