@@ -54,7 +54,9 @@ logger = logging.getLogger(__name__)
 
 
 CONFIG: aiohttp.web.AppKey[Config] = aiohttp.web.AppKey("CONFIG", Config)
-API_V1_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey("API_V1_APP", aiohttp.web.Application)
+API_V1_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
+    "API_V1_APP", aiohttp.web.Application
+)
 
 
 class ApiHandler:
