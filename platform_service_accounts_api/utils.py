@@ -38,7 +38,7 @@ T_contra = TypeVar("T_contra", contravariant=True)
 
 @asynccontextmanager
 async def auto_close(
-    gen: AsyncGenerator[T_co, T_contra]
+    gen: AsyncGenerator[T_co, T_contra],
 ) -> AsyncIterator[AsyncGenerator[T_co, T_contra]]:
     try:
         yield gen
