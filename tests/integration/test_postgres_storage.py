@@ -3,7 +3,6 @@ from asyncpg import Pool
 
 from platform_service_accounts_api.storage.base import Storage
 from platform_service_accounts_api.storage.postgres import PostgresStorage
-
 from tests.unit.test_in_memory_storage import TestStorage as _TestAStorage
 
 
