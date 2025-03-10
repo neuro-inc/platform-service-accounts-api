@@ -3,10 +3,6 @@ on:
   pull_request:
     branches: [master]
 
-permissions:
-  pull-requests: write
-  contents: write
-
 jobs:
   approve:
     name: Approve bot PR
