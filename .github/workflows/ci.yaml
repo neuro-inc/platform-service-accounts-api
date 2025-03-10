@@ -21,12 +21,12 @@ jobs:
     - name: Install python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: 3.11
     - name: Cache packages
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-py-3.9-${{ hashFiles('requirements/*.txt') }}-${{
+        key: ${{ runner.os }}-py-3.11-${{ hashFiles('requirements/*.txt') }}-${{
           hashFiles('setup.py') }}
     - name: Install dependencies
       run: make setup
