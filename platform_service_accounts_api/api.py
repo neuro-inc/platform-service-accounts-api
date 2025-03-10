@@ -267,9 +267,9 @@ package_version = version(__package__)
 
 
 async def add_version_to_header(request: Request, response: StreamResponse) -> None:
-    response.headers[
-        "X-Service-Version"
-    ] = f"platform-service-accounts-api/{package_version}"
+    response.headers["X-Service-Version"] = (
+        f"platform-service-accounts-api/{package_version}"
+    )
 
 
 async def create_app(config: Config) -> aiohttp.web.Application:
