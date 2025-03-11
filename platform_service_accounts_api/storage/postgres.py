@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import uuid
 from collections.abc import AsyncIterator
@@ -28,7 +30,7 @@ class ServiceAccountTables:
     service_accounts: sa.Table
 
     @classmethod
-    def create(cls) -> "ServiceAccountTables":
+    def create(cls) -> ServiceAccountTables:
         metadata = sa.MetaData()
         service_accounts = sa.Table(
             "service_accounts",
