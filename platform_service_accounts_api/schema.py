@@ -11,7 +11,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def query_schema(**kwargs: fields.Field) -> Callable[[F], F]:
-    schema: Schema = Schema.from_dict(kwargs)()  # type: ignore
+    schema: Schema = Schema.from_dict(kwargs)()
 
     def _decorator(handler: F) -> F:
         @querystring_schema(schema)
