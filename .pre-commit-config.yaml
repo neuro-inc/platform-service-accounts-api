@@ -8,12 +8,6 @@ repos:
   rev: v1.5.0
   hooks:
   - id: yesqa
-- repo: https://github.com/sondrelg/pep585-upgrade
-  rev: v1.0
-  hooks:
-  - id: upgrade-type-hints
-    args:
-    - --futures=true
 - repo: https://github.com/Zac-HD/shed
   rev: 2024.10.1
   hooks:

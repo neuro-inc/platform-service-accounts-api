@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -51,6 +53,15 @@ from .storage.postgres import PostgresStorage
 from .utils import accepts_ndjson, auto_close, ndjson_error_handler
 
 logger = logging.getLogger(__name__)
+
+
+CONFIG: aiohttp.web.AppKey[Config] = aiohttp.web.AppKey("CONFIG", Config)
+API_V1_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
+    "API_V1_APP", aiohttp.web.Application
+)
+SERVICE_ACCOUNTS_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
+    "SERVICE_ACCOUNTS_APP", aiohttp.web.Application
+)
 
 
 class ApiHandler:
@@ -274,7 +285,7 @@ async def add_version_to_header(request: Request, response: StreamResponse) -> N
 
 async def create_app(config: Config) -> aiohttp.web.Application:
     app = aiohttp.web.Application(middlewares=[handle_exceptions])
-    app["config"] = config
+    app[CONFIG] = config
 
     async def _init_app(app: aiohttp.web.Application) -> AsyncIterator[None]:
         async with AsyncExitStack() as exit_stack:
@@ -307,10 +318,10 @@ async def create_app(config: Config) -> aiohttp.web.Application:
     app.cleanup_ctx.append(_init_app)
 
     api_v1_app = await create_api_v1_app()
-    app["api_v1_app"] = api_v1_app
+    app[API_V1_APP] = api_v1_app
 
     service_accounts_app = await create_service_accounts_app(config)
-    app["service_accounts_app"] = service_accounts_app
+    app[SERVICE_ACCOUNTS_APP] = service_accounts_app
     api_v1_app.add_subapp("/service_accounts", service_accounts_app)
 
     app.add_subapp("/api/v1", api_v1_app)

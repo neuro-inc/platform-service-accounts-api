@@ -1,11 +1,7 @@
 name: Enable auto-merge
 on:
   pull_request:
-    types: [opened]
-
-permissions:
-  pull-requests: write
-  contents: write
+    branches: [master]
 
 jobs:
   approve:
