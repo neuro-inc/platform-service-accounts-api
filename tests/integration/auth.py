@@ -63,7 +63,6 @@ def _auth_server(
     auth_jwt_secret: str,
     _auth_url: URL,
 ) -> Iterator[URL]:
-
     if _auth_url:
         yield _auth_url
         return

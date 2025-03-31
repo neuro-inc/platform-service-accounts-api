@@ -5,9 +5,11 @@ setup:
 	pip install -r requirements/test.txt
 	pre-commit install
 
+.PHONY: lint
 lint: format
 	mypy platform_service_accounts_api tests --show-error-codes
 
+.PHONY: format
 format:
 ifdef CI
 	pre-commit run --all-files --show-diff-on-failure
