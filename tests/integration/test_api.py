@@ -182,8 +182,7 @@ class TestApi:
         ) as resp:
             assert resp.status == HTTPForbidden.status_code, await resp.text()
             assert await resp.text() == (
-                "CORS preflight request failed: "
-                "origin 'http://unknown' is not allowed"
+                "CORS preflight request failed: origin 'http://unknown' is not allowed"
             )
 
     async def test_ping_options(
@@ -264,7 +263,6 @@ class TestApi:
         client: aiohttp.ClientSession,
         auth_client: AuthClient,
     ) -> None:
-
         async with client.post(
             url=service_accounts_api.accounts_url,
             json={"default_cluster": "default", "default_project": "some-project"},

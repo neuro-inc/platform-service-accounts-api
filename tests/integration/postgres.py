@@ -23,7 +23,6 @@ def _postgres_dsn(
     auth_name: str,
     auth_jwt_secret: str,
 ) -> Iterator[str]:
-
     image_name = "postgres:11.3"
     container_name = "postgres"
 
@@ -83,7 +82,6 @@ async def postgres_dsn(_postgres_dsn: str) -> str:
 
 @pytest.fixture
 async def postgres_config(postgres_dsn: str) -> AsyncIterator[PostgresConfig]:
-
     db_config = PostgresConfig(
         postgres_dsn=postgres_dsn,
         alembic=EnvironConfigFactory().create_alembic(postgres_dsn),
