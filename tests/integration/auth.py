@@ -8,6 +8,7 @@ from typing import Any
 
 import aiohttp
 import pytest
+import pytest_asyncio
 from aiohttp.hdrs import AUTHORIZATION
 from async_timeout import timeout
 from docker import DockerClient
@@ -115,10 +116,10 @@ async def wait_for_auth_server(
         pytest.fail(f"failed to connect to {url}: {last_exc}")
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def auth_server(_auth_server: URL) -> AsyncIterator[URL]:
     await wait_for_auth_server(_auth_server)
-    return _auth_server
+    yield _auth_server
 
 
 @pytest.fixture
@@ -166,7 +167,7 @@ class _User(User):
         return {AUTHORIZATION: f"Bearer {self.token}"}
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def regular_user_factory(
     auth_client: AuthClient,
     token_factory: Callable[[str], str],
@@ -179,7 +180,7 @@ async def regular_user_factory(
         await auth_client.add_user(user, token=admin_token)
         return _User(name=user.name, token=token_factory(user.name))
 
-    return _factory
+    yield _factory
 
 
 @pytest.fixture
