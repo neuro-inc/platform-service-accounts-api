@@ -20,7 +20,7 @@ setup: venv
 
 .PHONY: lint
 lint: format
-	mypy platform_service_accounts_api tests --show-error-codes
+	poetry run mypy platform_service_accounts_api tests --show-error-codes
 
 .PHONY: format
 format:
