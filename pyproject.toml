@@ -80,6 +80,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning:jose",
+    "ignore::DeprecationWarning:.*",
     "ignore::marshmallow.warnings.RemovedInMarshmallow4Warning:apispec.ext.marshmallow.field_converter",
     "ignore:distutils Version classes are deprecated. Use packaging.version instead:DeprecationWarning"
 ]

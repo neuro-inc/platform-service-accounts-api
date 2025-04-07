@@ -25,9 +25,9 @@ lint: format
 .PHONY: format
 format:
 ifdef CI
-	pre-commit run --all-files --show-diff-on-failure
+	poetry pre-commit run --all-files --show-diff-on-failure
 else
-	pre-commit run --all-files
+	poetry pre-commit run --all-files
 endif
 
 .PHONY: test_unit
