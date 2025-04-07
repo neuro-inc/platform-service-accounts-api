@@ -28,7 +28,7 @@ alembic = "1.12.0"
 psycopg2-binary = "2.9.10"
 asyncpgsa = "0.27.1"
 sqlalchemy = "~1.3.0"
-yarl = "1.12.1"
+yarl = "1.19.0"
 
 [tool.poetry.scripts]
 platform-service-accounts-api = "platform_service_accounts_api.api:main"
