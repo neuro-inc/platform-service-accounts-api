@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, fields
-from typing import Any, Optional, TypeVar
+from typing import Any, Self, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +47,13 @@ class HasId:
 
 @dataclass(frozen=True)
 class ServiceAccountData:
-    name: Optional[str]
+    name: str | None
     default_cluster: str
     role: str
     owner: str
     created_at: datetime.datetime
     default_project: str
-    default_org: Optional[str]
+    default_org: str | None
 
 
 @dataclass(frozen=True)
@@ -81,6 +81,6 @@ class Storage(ABC):
     @abstractmethod
     def list(
         self,
-        owner: Optional[str] = None,
+        owner: str | None = None,
     ) -> AsyncIterator[ServiceAccount]:
         pass

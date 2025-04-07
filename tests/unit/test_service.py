@@ -1,8 +1,7 @@
 import base64
 import json
 from dataclasses import asdict, replace
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import pytest
 from aiohttp import ClientResponseError
@@ -19,31 +18,30 @@ from platform_service_accounts_api.storage.in_memory import InMemoryStorage
 
 class MockAuthClient(AuthClient):
     def __init__(self) -> None:
-        self.user_to_return: Optional[User] = User(name="testuser")
+        self.user_to_return: User | None = User(name="testuser")
         self.created_users: list[User] = []
         self.deleted_users: list[str] = []
 
-    async def add_user(self, user: User, token: Optional[str] = None) -> None:
+    async def add_user(self, user: User, token: str | None = None) -> None:
         self.created_users.append(user)
 
-    async def delete_user(self, name: str, token: Optional[str] = None) -> None:
+    async def delete_user(self, name: str, token: str | None = None) -> None:
         self.deleted_users.append(name)
 
-    async def get_user(self, name: str, token: Optional[str] = None) -> User:
+    async def get_user(self, name: str, token: str | None = None) -> User:
         if self.user_to_return:
             return self.user_to_return
-        else:
-            raise ClientResponseError(
-                request_info=None,  # type: ignore
-                history=(),
-                status=404,
-            )
+        raise ClientResponseError(
+            request_info=None,  # type: ignore
+            history=(),
+            status=404,
+        )
 
     async def get_user_token(
         self,
         name: str,
-        new_token_uri: Optional[str] = None,
-        token: Optional[str] = None,
+        new_token_uri: str | None = None,
+        token: str | None = None,
     ) -> str:
         return f"token-{name}"
 
@@ -83,9 +81,9 @@ class TestService:
     async def test_create(
         self, service: AccountsService, mock_auth_client: MockAuthClient
     ) -> None:
-        before_create = datetime.now(timezone.utc)
+        before_create = datetime.now(UTC)
         account = await service.create(self.CREATE_DATA)
-        after_create = datetime.now(timezone.utc)
+        after_create = datetime.now(UTC)
         expected_role = (
             f"{self.CREATE_DATA.owner}/service-accounts/{self.CREATE_DATA.name}"
         )

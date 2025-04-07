@@ -3,7 +3,8 @@ import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any
 
 import aiohttp
 import pytest
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session")
 def auth_image() -> str:
-    with open("AUTH_SERVER_IMAGE_NAME") as f:
+    with Path("AUTH_SERVER_IMAGE_NAME").open() as f:
         return f.read().strip()
 
 
@@ -108,22 +109,22 @@ async def wait_for_auth_server(
                         break
                 except (AssertionError, OSError, aiohttp.ClientError) as exc:
                     last_exc = exc
-                logger.debug(f"waiting for {url}: {last_exc}")
+                logger.debug("Waiting for %s: %s", url, last_exc)
                 await asyncio.sleep(interval_s)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         pytest.fail(f"failed to connect to {url}: {last_exc}")
 
 
 @pytest.fixture
 async def auth_server(_auth_server: URL) -> AsyncIterator[URL]:
     await wait_for_auth_server(_auth_server)
-    yield _auth_server
+    return _auth_server
 
 
 @pytest.fixture
 def token_factory(auth_jwt_secret: str) -> Callable[[str], str]:
     def _factory(identity: str) -> str:
-        payload = {claim: identity for claim in JWT_IDENTITY_CLAIM_OPTIONS}
+        payload = dict.fromkeys(JWT_IDENTITY_CLAIM_OPTIONS, identity)
         return jwt.encode(payload, auth_jwt_secret, algorithm="HS256")
 
     return _factory
@@ -170,15 +171,15 @@ async def regular_user_factory(
     auth_client: AuthClient,
     token_factory: Callable[[str], str],
     admin_token: str,
-) -> AsyncIterator[Callable[[Optional[str]], Awaitable[_User]]]:
-    async def _factory(name: Optional[str] = None) -> _User:
+) -> AsyncIterator[Callable[[str | None], Awaitable[_User]]]:
+    async def _factory(name: str | None = None) -> _User:
         if not name:
             name = f"user-{random_name()}"
         user = User(name=name)
         await auth_client.add_user(user, token=admin_token)
         return _User(name=user.name, token=token_factory(user.name))
 
-    yield _factory
+    return _factory
 
 
 @pytest.fixture

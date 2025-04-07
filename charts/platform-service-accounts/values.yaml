@@ -52,3 +52,9 @@ postgres:
 cors: {}
 
 enableDocs: false
+
+securityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
