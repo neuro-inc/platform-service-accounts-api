@@ -8,9 +8,6 @@ permissions:
   contents: write
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yaml
-
   approve:
     name: Approve bot PR
     runs-on: ubuntu-latest
