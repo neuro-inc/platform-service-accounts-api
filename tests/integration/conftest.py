@@ -50,7 +50,6 @@ def config_factory(
             "server": ServerConfig(host="0.0.0.0", port=8080),
             "platform_auth": auth_config,
             "cors": CORSConfig(allowed_origins=["https://neu.ro"]),
-            "sentry": None,
             "postgres": postgres_config,
             "api_base_url": URL("https://dev.neu.ro/api/v1"),
         }

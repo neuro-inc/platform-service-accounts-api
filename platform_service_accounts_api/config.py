@@ -24,21 +24,6 @@ class CORSConfig:
 
 
 @dataclass(frozen=True)
-class ZipkinConfig:
-    url: URL
-    app_name: str = "platform-service-accounts-api"
-    sample_rate: float = 0.0
-
-
-@dataclass(frozen=True)
-class SentryConfig:
-    dsn: URL
-    cluster_name: str
-    app_name: str = "platform-service-accounts-api"
-    sample_rate: float = 0.0
-
-
-@dataclass(frozen=True)
 class PostgresConfig:
     postgres_dsn: str
 
@@ -61,5 +46,3 @@ class Config:
     cors: CORSConfig
     postgres: PostgresConfig
     enable_docs: bool = False
-    zipkin: ZipkinConfig | None = None
-    sentry: SentryConfig | None = None
