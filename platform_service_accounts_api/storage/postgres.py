@@ -4,7 +4,7 @@ import json
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import asdict, dataclass
-from typing import Any, Optional
+from typing import Any
 
 import asyncpgsa
 import sqlalchemy as sa
@@ -59,15 +59,15 @@ class PostgresStorage(Storage):
         self._pool = pool
 
     async def _execute(
-        self, query: sasql.ClauseElement, conn: Optional[Connection] = None
+        self, query: sasql.ClauseElement, conn: Connection | None = None
     ) -> str:
         query_string, params = asyncpgsa.compile_query(query)
         conn = conn or self._pool
         return await conn.execute(query_string, *params)
 
     async def _fetchrow(
-        self, query: sasql.ClauseElement, conn: Optional[Connection] = None
-    ) -> Optional[Record]:
+        self, query: sasql.ClauseElement, conn: Connection | None = None
+    ) -> Record | None:
         query_string, params = asyncpgsa.compile_query(query)
         conn = conn or self._pool
         return await conn.fetchrow(query_string, *params)
@@ -138,7 +138,7 @@ class PostgresStorage(Storage):
 
     async def list(
         self,
-        owner: Optional[str] = None,
+        owner: str | None = None,
     ) -> AsyncIterator[ServiceAccount]:
         query = self._table.select()
         if owner is not None:

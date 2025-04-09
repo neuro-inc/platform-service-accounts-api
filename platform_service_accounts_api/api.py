@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
-from importlib.metadata import version
 
 import aiohttp
 import aiohttp.web
@@ -31,6 +30,8 @@ from marshmallow import ValidationError
 from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import AuthScheme, setup_security
 from neuro_logging import init_logging, notrace, setup_sentry, setup_zipkin_tracer
+
+from platform_service_accounts_api import __version__
 
 from .config import Config, CORSConfig, PlatformAuthConfig
 from .config_factory import EnvironConfigFactory
@@ -139,13 +140,12 @@ class ServiceAccountsApiHandler:
                         payload_line = ServiceAccountSchema().dumps(image)
                         await response.write(payload_line.encode() + b"\n")
                 return response
-            else:
-                response_payload = [
-                    ServiceAccountSchema().dump(image) async for image in bake_images
-                ]
-                return aiohttp.web.json_response(
-                    data=response_payload, status=HTTPOk.status_code
-                )
+            response_payload = [
+                ServiceAccountSchema().dump(image) async for image in bake_images
+            ]
+            return aiohttp.web.json_response(
+                data=response_payload, status=HTTPOk.status_code
+            )
 
     @docs(tags=["service_accounts"], summary="Get service account by id or name")
     @response_schema(ServiceAccountSchema(), HTTPOk.status_code)
@@ -260,26 +260,23 @@ def _setup_cors(app: aiohttp.web.Application, config: CORSConfig) -> None:
     if not config.allowed_origins:
         return
 
-    logger.info(f"Setting up CORS with allowed origins: {config.allowed_origins}")
+    logger.info("Setting up CORS with allowed origins: %s", config.allowed_origins)
     default_options = aiohttp_cors.ResourceOptions(
         allow_credentials=True,
         expose_headers="*",
         allow_headers="*",
     )
     cors = aiohttp_cors.setup(
-        app, defaults={origin: default_options for origin in config.allowed_origins}
+        app, defaults=dict.fromkeys(config.allowed_origins, default_options)
     )
     for route in app.router.routes():
-        logger.debug(f"Setting up CORS for {route}")
+        logger.debug("Setting up CORS for %s", route)
         cors.add(route)
-
-
-package_version = version(__package__)
 
 
 async def add_version_to_header(request: Request, response: StreamResponse) -> None:
     response.headers["X-Service-Version"] = (
-        f"platform-service-accounts-api/{package_version}"
+        f"platform-service-accounts-api/{__version__}"
     )
 
 

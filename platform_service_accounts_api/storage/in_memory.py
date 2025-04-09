@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import AsyncIterator
-from typing import Optional
 
 from .base import (
     ExistsError,
@@ -41,7 +40,7 @@ class InMemoryStorage(Storage):
     async def delete(self, id: str) -> None:
         self._items.pop(id)
 
-    async def list(self, owner: Optional[str] = None) -> AsyncIterator[ServiceAccount]:
+    async def list(self, owner: str | None = None) -> AsyncIterator[ServiceAccount]:
         for item in self._items.values():
             if owner is not None and item.owner != owner:
                 continue

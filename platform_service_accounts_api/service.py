@@ -7,7 +7,6 @@ import logging
 import secrets
 from collections.abc import AsyncIterator
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 from aiohttp import ClientResponseError
 from neuro_auth_client import AuthClient, User
@@ -28,11 +27,11 @@ class NoAccessToRoleError(Exception):
 
 @dataclass(frozen=True)
 class AccountCreateData:
-    name: Optional[str]
+    name: str | None
     default_cluster: str
     owner: str
     default_project: str
-    default_org: Optional[str] = None
+    default_org: str | None = None
 
 
 @dataclass(frozen=True)
@@ -72,7 +71,7 @@ class AccountsService:
             ServiceAccountData(
                 **asdict(data),
                 role=role,
-                created_at=datetime.datetime.now(datetime.timezone.utc),
+                created_at=datetime.datetime.now(datetime.UTC),
             )
         )
         try:
