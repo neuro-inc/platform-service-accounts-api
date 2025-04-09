@@ -12,16 +12,22 @@ repos:
   - id: debug-statements
   - id: check-added-large-files
   - id: end-of-file-fixer
-  - id: requirements-txt-fixer
   - id: trailing-whitespace
   - id: check-symlinks
     exclude: ^charts/
-- repo: https://github.com/sondrelg/pep585-upgrade
-  rev: v1.0
+    types_or:
+    - python
+    - markdown
+    - rst
+- repo: https://github.com/sirosen/check-jsonschema
+  rev: 0.31.3
   hooks:
-  - id: upgrade-type-hints
-    args:
-    - --futures=true
+  - id: check-github-actions
+  - id: check-github-workflows
+- repo: https://github.com/mrtazz/checkmake.git
+  rev: 0.2.2
+  hooks:
+  - id: checkmake
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.11.4
   hooks:
@@ -37,9 +43,12 @@ repos:
       .gitignore
 - repo: https://github.com/sirosen/check-jsonschema
   rev: 0.32.1
+- repo: https://github.com/python-poetry/poetry
+  rev: '2.1.1'
   hooks:
-  - id: check-github-actions
-  - id: check-github-workflows
+  - id: poetry-check
+#  - id: poetry-lock
+  - id: poetry-install
 ci:
   skip:
   - check-github-actions

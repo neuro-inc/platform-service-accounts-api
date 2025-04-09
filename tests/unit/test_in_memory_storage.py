@@ -1,6 +1,6 @@
 import secrets
 from dataclasses import asdict, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -41,7 +41,7 @@ class TestStorage:
             default_cluster=secrets.token_hex(8),
             default_project=secrets.token_hex(8),
             default_org=None,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         # Updating this way so constructor call is typechecked properly
         for key, value in kwargs.items():
