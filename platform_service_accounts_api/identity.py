@@ -23,7 +23,7 @@ async def untrusted_user(request: Request) -> Identity:
     identity = await _get_identity(request)
 
     autz_policy = request.config_dict.get(AUTZ_KEY)
-    name = autz_policy.get_user_name_from_identity(identity)  # type: ignore[union-attr]
+    name = autz_policy.get_user_name_from_identity(identity)
     if name is None:
         raise HTTPUnauthorized()
 
