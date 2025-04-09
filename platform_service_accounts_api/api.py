@@ -64,6 +64,10 @@ SERVICE_ACCOUNTS_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.
     "SERVICE_ACCOUNTS_APP", aiohttp.web.Application
 )
 
+SERVICE: aiohttp.web.AppKey[AccountsService] = aiohttp.web.AppKey(
+    "SERVICE", AccountsService
+)
+
 
 class ApiHandler:
     def register(self, app: aiohttp.web.Application) -> None:
@@ -101,7 +105,7 @@ class ServiceAccountsApiHandler:
 
     @property
     def service(self) -> AccountsService:
-        return self._app["service"]
+        return self._app[SERVICE]
 
     async def _get_untrusted_user(self, request: Request) -> User:
         identity = await untrusted_user(request)
@@ -304,7 +308,7 @@ async def create_app(config: Config) -> aiohttp.web.Application:
             storage: Storage = PostgresStorage(postgres_pool)
 
             logger.info("Initializing Service")
-            app[SERVICE_ACCOUNTS_APP]["service"] = AccountsService(
+            app[SERVICE_ACCOUNTS_APP][SERVICE] = AccountsService(
                 auth_client=auth_client,
                 storage=storage,
                 api_base_url=config.api_base_url,
