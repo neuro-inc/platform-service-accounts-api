@@ -307,7 +307,7 @@ async def create_app(config: Config) -> aiohttp.web.Application:
             storage: Storage = PostgresStorage(postgres_pool)
 
             logger.info("Initializing Service")
-            app["service_accounts_app"]["service"] = AccountsService(
+            app[SERVICE_ACCOUNTS_APP]["service"] = AccountsService(
                 auth_client=auth_client,
                 storage=storage,
                 api_base_url=config.api_base_url,
