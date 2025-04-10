@@ -59,13 +59,6 @@ logger = logging.getLogger(__name__)
 
 
 CONFIG: aiohttp.web.AppKey[Config] = aiohttp.web.AppKey("CONFIG", Config)
-API_V1_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
-    "API_V1_APP", aiohttp.web.Application
-)
-SERVICE_ACCOUNTS_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
-    "SERVICE_ACCOUNTS_APP", aiohttp.web.Application
-)
-
 SERVICE: aiohttp.web.AppKey[AccountsService] = aiohttp.web.AppKey(
     "SERVICE", AccountsService
 )
@@ -366,9 +359,9 @@ async def create_app(config: Config) -> aiohttp.web.Application:
                 storage=storage,
                 api_base_url=config.api_base_url,
             )
-            app["service"] = service
+            app[SERVICE] = service
             # Propagate the service instance to the subapp.
-            service_accounts_app["service"] = service
+            service_accounts_app[SERVICE] = service
             yield
 
     app.cleanup_ctx.append(_init_app)
