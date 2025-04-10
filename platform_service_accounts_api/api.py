@@ -29,7 +29,7 @@ from aiohttp_security import check_authorized
 from marshmallow import ValidationError
 from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import AuthScheme, setup_security
-from neuro_logging import init_logging, notrace, setup_sentry, setup_zipkin_tracer
+from neuro_logging import init_logging, notrace, setup_sentry
 
 from platform_service_accounts_api import __version__
 
@@ -347,30 +347,11 @@ async def create_app(config: Config) -> aiohttp.web.Application:
     return app
 
 
-def setup_tracing(config: Config) -> None:
-    if config.zipkin:
-        setup_zipkin_tracer(
-            config.zipkin.app_name,
-            config.server.host,
-            config.server.port,
-            config.zipkin.url,
-            config.zipkin.sample_rate,
-        )
-
-    if config.sentry:
-        setup_sentry(
-            config.sentry.dsn,
-            app_name=config.sentry.app_name,
-            cluster_name=config.sentry.cluster_name,
-            sample_rate=config.sentry.sample_rate,
-        )
-
-
 def main() -> None:  # pragma: no coverage
     init_logging()
     config = EnvironConfigFactory().create()
     logging.info("Loaded config: %r", config)
-    setup_tracing(config)
+    setup_sentry()
     aiohttp.web.run_app(
         create_app(config), host=config.server.host, port=config.server.port
     )

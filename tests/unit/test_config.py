@@ -10,9 +10,7 @@ from platform_service_accounts_api.config import (
     CORSConfig,
     PlatformAuthConfig,
     PostgresConfig,
-    SentryConfig,
     ServerConfig,
-    ZipkinConfig,
 )
 from platform_service_accounts_api.config_factory import EnvironConfigFactory
 
@@ -42,9 +40,9 @@ def test_create(cert_authority_path: str, token_path: str) -> None:
         "NP_SERVICE_ACCOUNTS_API_PLATFORM_AUTH_TOKEN": "platform-auth-token",
         "NP_CORS_ORIGINS": "https://domain1.com,http://do.main",
         "NP_SERVICE_ACCOUNTS_API_ENABLE_DOCS": "true",
-        "NP_ZIPKIN_URL": "http://zipkin:9411",
-        "NP_SENTRY_DSN": "https://test.com",
-        "NP_SENTRY_CLUSTER_NAME": "test",
+        "SENTRY_DSN": "https://test.com",
+        "SENTRY_CLUSTER_NAME": "test",
+        "SENTRY_APP_NAME": "platform-service-accounts-api-test",
         "NP_DB_POSTGRES_DSN": "postgresql://postgres@localhost:5432/postgres",
         "NP_DB_POSTGRES_POOL_MIN": "50",
         "NP_DB_POSTGRES_POOL_MAX": "500",
@@ -63,8 +61,6 @@ def test_create(cert_authority_path: str, token_path: str) -> None:
             alembic=ANY,
         ),
         cors=CORSConfig(["https://domain1.com", "http://do.main"]),
-        zipkin=ZipkinConfig(url=URL("http://zipkin:9411")),
-        sentry=SentryConfig(dsn=URL("https://test.com"), cluster_name="test"),
         enable_docs=True,
         api_base_url=URL("https://dev.neu.ro/api/v1"),
     )
