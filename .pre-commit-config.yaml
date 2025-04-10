@@ -5,6 +5,19 @@ repos:
   - id: check-added-large-files
   - id: check-merge-conflict
     exclude: "rst$"
+- repo: https://github.com/Zac-HD/shed
+  rev: 2024.10.1
+  hooks:
+  - id: shed
+    args:
+    - --refactor
+    types_or:
+    - python
+    - markdown
+    - rst
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: 'v5.0.0'
+  hooks:
   - id: check-case-conflict
   - id: check-json
   - id: check-toml
