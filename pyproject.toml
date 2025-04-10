@@ -82,7 +82,7 @@ filterwarnings = [
     "ignore::DeprecationWarning:jose",
     "ignore::DeprecationWarning:.*",
     "ignore::marshmallow.warnings.RemovedInMarshmallow4Warning:apispec.ext.marshmallow.field_converter",
-    "ignore::aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_apispec",
+    "ignore::aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_swagger3",
     "ignore::aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_security"
 ]
 
@@ -101,10 +101,6 @@ warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = "aiohttp_security.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "aiohttp_apispec.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
