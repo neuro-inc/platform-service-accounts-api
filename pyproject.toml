@@ -82,7 +82,6 @@ filterwarnings = [
     "ignore::DeprecationWarning:jose",
     "ignore::DeprecationWarning:.*",
     "ignore::marshmallow.warnings.RemovedInMarshmallow4Warning:apispec.ext.marshmallow.field_converter",
-    "ignore::aiohttp.web_exceptions.NotAppKeyWarning",
     "ignore::aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_apispec",
     "ignore::aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_security"
 ]
