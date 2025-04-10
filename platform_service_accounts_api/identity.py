@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 
@@ -29,7 +31,7 @@ async def untrusted_user(request: Request) -> Identity:
 
 
 async def _get_identity(request: Request) -> str:
-    identity_policy = request.config_dict.get(IDENTITY_KEY)
+    identity_policy = request.config_dict[IDENTITY_KEY]
     identity = await identity_policy.identify(request)
     if identity is None:
         raise HTTPUnauthorized()
