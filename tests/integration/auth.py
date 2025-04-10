@@ -10,7 +10,6 @@ import aiohttp
 import pytest
 import pytest_asyncio
 from aiohttp.hdrs import AUTHORIZATION
-from async_timeout import timeout
 from docker import DockerClient
 from docker.errors import NotFound as ContainerNotFound
 from docker.models.containers import Container
@@ -102,7 +101,7 @@ async def wait_for_auth_server(
 ) -> None:
     last_exc = None
     try:
-        async with timeout(timeout_s):
+        async with asyncio.timeout(timeout_s):
             while True:
                 try:
                     async with AuthClient(url=url, token="") as auth_client:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -30,7 +32,7 @@ from aiohttp_swagger3 import SwaggerDocs, SwaggerInfo, SwaggerUiSettings
 from marshmallow import ValidationError
 from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import AuthScheme, setup_security
-from neuro_logging import init_logging, notrace, setup_sentry, setup_zipkin_tracer
+from neuro_logging import init_logging, notrace, setup_sentry
 
 from platform_service_accounts_api import __version__
 
@@ -54,6 +56,19 @@ from .storage.postgres import PostgresStorage
 from .utils import accepts_ndjson, auto_close, ndjson_error_handler
 
 logger = logging.getLogger(__name__)
+
+
+CONFIG: aiohttp.web.AppKey[Config] = aiohttp.web.AppKey("CONFIG", Config)
+API_V1_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
+    "API_V1_APP", aiohttp.web.Application
+)
+SERVICE_ACCOUNTS_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
+    "SERVICE_ACCOUNTS_APP", aiohttp.web.Application
+)
+
+SERVICE: aiohttp.web.AppKey[AccountsService] = aiohttp.web.AppKey(
+    "SERVICE", AccountsService
+)
 
 
 @middleware
@@ -105,7 +120,7 @@ class ServiceAccountsApiHandler:
 
     @property
     def service(self) -> AccountsService:
-        return self._app["service"]
+        return self._app[SERVICE]
 
     async def _get_untrusted_user(self, request: Request) -> User:
         identity = await untrusted_user(request)
@@ -318,7 +333,7 @@ def create_service_accounts_subapp(config: Config) -> aiohttp.web.Application:
 
 async def create_app(config: Config) -> aiohttp.web.Application:
     app = aiohttp.web.Application(middlewares=[handle_exceptions])
-    app["config"] = config
+    app[CONFIG] = config
 
     service_accounts_app = create_service_accounts_subapp(config)
     app.add_subapp("/api/v1/service_accounts", service_accounts_app)
@@ -446,30 +461,11 @@ async def create_app(config: Config) -> aiohttp.web.Application:
     return app
 
 
-def setup_tracing(config: Config) -> None:
-    if config.zipkin:
-        setup_zipkin_tracer(
-            config.zipkin.app_name,
-            config.server.host,
-            config.server.port,
-            config.zipkin.url,
-            config.zipkin.sample_rate,
-        )
-
-    if config.sentry:
-        setup_sentry(
-            config.sentry.dsn,
-            app_name=config.sentry.app_name,
-            cluster_name=config.sentry.cluster_name,
-            sample_rate=config.sentry.sample_rate,
-        )
-
-
 def main() -> None:  # pragma: no coverage
     init_logging()
     config = EnvironConfigFactory().create()
     logging.info("Loaded config: %r", config)
-    setup_tracing(config)
+    setup_sentry()
     aiohttp.web.run_app(
         create_app(config), host=config.server.host, port=config.server.port
     )

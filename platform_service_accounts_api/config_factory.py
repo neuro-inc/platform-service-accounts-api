@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import pathlib
@@ -12,9 +14,7 @@ from .config import (
     CORSConfig,
     PlatformAuthConfig,
     PostgresConfig,
-    SentryConfig,
     ServerConfig,
-    ZipkinConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,8 +34,6 @@ class EnvironConfigFactory:
             server=self._create_server(),
             platform_auth=self._create_platform_auth(),
             cors=self.create_cors(),
-            zipkin=self.create_zipkin(),
-            sentry=self.create_sentry(),
             postgres=self.create_postgres(),
             enable_docs=enable_docs,
         )
@@ -56,30 +54,6 @@ class EnvironConfigFactory:
         if origins_str:
             origins = origins_str.split(",")
         return CORSConfig(allowed_origins=origins)
-
-    def create_zipkin(self) -> ZipkinConfig | None:
-        if "NP_ZIPKIN_URL" not in self._environ:
-            return None
-
-        url = URL(self._environ["NP_ZIPKIN_URL"])
-        app_name = self._environ.get("NP_ZIPKIN_APP_NAME", ZipkinConfig.app_name)
-        sample_rate = float(
-            self._environ.get("NP_ZIPKIN_SAMPLE_RATE", ZipkinConfig.sample_rate)
-        )
-        return ZipkinConfig(url=url, app_name=app_name, sample_rate=sample_rate)
-
-    def create_sentry(self) -> SentryConfig | None:
-        if "NP_SENTRY_DSN" not in self._environ:
-            return None
-
-        return SentryConfig(
-            dsn=URL(self._environ["NP_SENTRY_DSN"]),
-            cluster_name=self._environ["NP_SENTRY_CLUSTER_NAME"],
-            app_name=self._environ.get("NP_SENTRY_APP_NAME", SentryConfig.app_name),
-            sample_rate=float(
-                self._environ.get("NP_SENTRY_SAMPLE_RATE", SentryConfig.sample_rate)
-            ),
-        )
 
     def create_postgres(self) -> PostgresConfig:
         try:

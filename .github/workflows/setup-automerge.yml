@@ -1,16 +1,9 @@
 name: Enable auto-merge
 on:
   pull_request:
-    types: [opened]
-
-permissions:
-  pull-requests: write
-  contents: write
+    branches: [master]
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yaml
-
   approve:
     name: Approve bot PR
     runs-on: ubuntu-latest
