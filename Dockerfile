@@ -30,11 +30,13 @@ RUN addgroup --gid $SERVICE_GID $SERVICE_NAME && \
 
 COPY --from=builder --chown=$SERVICE_NAME:$SERVICE_GID /root/.local /home/$SERVICE_NAME/.local
 
-WORKDIR /home/$SERVICE_NAME
-USER $SERVICE_NAME
+WORKDIR /app
+COPY alembic.ini alembic.ini
+COPY alembic alembic
 
+USER $SERVICE_NAME
 ENV PATH=/home/$SERVICE_NAME/.local/bin:$PATH
-ENV NP_API_PORT=8080
-EXPOSE $NP_API_PORT
+ENV NP_SERVICE_ACCOUNTS_API_PORT=8080
+EXPOSE $NP_SERVICE_ACCOUNTS_API_PORT
 
 ENTRYPOINT [ "platform-service-accounts-api" ]
