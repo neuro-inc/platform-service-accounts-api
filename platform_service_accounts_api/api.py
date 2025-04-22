@@ -13,8 +13,11 @@ from aiohttp.web import (
     Request,
     Response,
     StreamResponse,
+    delete,
+    get,
     json_response,
     middleware,
+    post,
 )
 from aiohttp.web_exceptions import (
     HTTPConflict,
@@ -24,8 +27,8 @@ from aiohttp.web_exceptions import (
     HTTPNotFound,
     HTTPOk,
 )
-from aiohttp_apispec import docs, request_schema, response_schema, setup_aiohttp_apispec
 from aiohttp_security import check_authorized
+from aiohttp_swagger3 import SwaggerDocs, SwaggerInfo, SwaggerUiSettings
 from marshmallow import ValidationError
 from neuro_auth_client import AuthClient, User
 from neuro_auth_client.security import AuthScheme, setup_security
@@ -38,7 +41,6 @@ from .config_factory import EnvironConfigFactory
 from .identity import untrusted_user
 from .postgres import create_postgres_pool
 from .schema import (
-    ClientErrorSchema,
     ServiceAccountCreateSchema,
     ServiceAccountSchema,
     ServiceAccountWithTokenSchema,
@@ -57,26 +59,36 @@ logger = logging.getLogger(__name__)
 
 
 CONFIG: aiohttp.web.AppKey[Config] = aiohttp.web.AppKey("CONFIG", Config)
-API_V1_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
-    "API_V1_APP", aiohttp.web.Application
-)
-SERVICE_ACCOUNTS_APP: aiohttp.web.AppKey[aiohttp.web.Application] = aiohttp.web.AppKey(
-    "SERVICE_ACCOUNTS_APP", aiohttp.web.Application
-)
-
 SERVICE: aiohttp.web.AppKey[AccountsService] = aiohttp.web.AppKey(
     "SERVICE", AccountsService
 )
 
 
+@middleware
+async def handle_exceptions(
+    request: Request, handler: Callable[[Request], Awaitable[StreamResponse]]
+) -> StreamResponse:
+    try:
+        return await handler(request)
+    except ValueError as e:
+        payload = {"error": str(e)}
+        return json_response(payload, status=HTTPBadRequest.status_code)
+    except ValidationError as e:
+        payload = {"error": str(e)}
+        return json_response(payload, status=HTTPBadRequest.status_code)
+    except aiohttp.web.HTTPException:
+        raise
+    except Exception as e:
+        msg_str = f"Unexpected exception: {str(e)}. Path with query: {request.path_qs}."
+        payload = {"error": msg_str}
+        logging.exception(msg_str)
+        return json_response(payload, status=HTTPInternalServerError.status_code)
+
+
 class ApiHandler:
     def register(self, app: aiohttp.web.Application) -> None:
-        app.add_routes(
-            [
-                aiohttp.web.get("/ping", self.handle_ping),
-                aiohttp.web.get("/secured-ping", self.handle_secured_ping),
-            ]
-        )
+        app.router.add_get("/ping", self.handle_ping)
+        app.router.add_get("/secured-ping", self.handle_secured_ping)
 
     @notrace
     async def handle_ping(self, request: Request) -> Response:
@@ -94,14 +106,10 @@ class ServiceAccountsApiHandler:
         self._config = config
 
     def register(self, app: aiohttp.web.Application) -> None:
-        app.add_routes(
-            [
-                aiohttp.web.get("", self.list),
-                aiohttp.web.post("", self.create),
-                aiohttp.web.get("/{id_or_name}", self.get),
-                aiohttp.web.delete("/{id_or_name}", self.delete),
-            ]
-        )
+        app.router.add_get("", self.list)
+        app.router.add_post("", self.create)
+        app.router.add_get("/{id_or_name}", self.get)
+        app.router.add_delete("/{id_or_name}", self.delete)
 
     @property
     def service(self) -> AccountsService:
@@ -123,15 +131,24 @@ class ServiceAccountsApiHandler:
                 raise HTTPNotFound(text=f"Service account {id_or_name} not found")
         return account
 
-    @docs(
-        tags=["service_accounts"],
-        summary="List all Service Accounts current user has access",
-    )
-    @response_schema(ServiceAccountSchema(many=True), HTTPOk.status_code)
-    async def list(
-        self,
-        request: aiohttp.web.Request,
-    ) -> aiohttp.web.StreamResponse:
+    async def list(self, request: Request) -> aiohttp.web.StreamResponse:
+        """
+        ---
+        summary: List all Service Accounts current user has access
+        security:
+          - jwt: []
+        tags:
+          - Service Accounts
+        responses:
+          '200':
+            description: List of service accounts
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ServiceAccount'
+        """
         username = await check_authorized(request)
         bake_images = self.service.list(owner=username)
         async with auto_close(bake_images):  # type: ignore[arg-type]
@@ -151,9 +168,30 @@ class ServiceAccountsApiHandler:
                 data=response_payload, status=HTTPOk.status_code
             )
 
-    @docs(tags=["service_accounts"], summary="Get service account by id or name")
-    @response_schema(ServiceAccountSchema(), HTTPOk.status_code)
-    async def get(self, request: aiohttp.web.Request) -> aiohttp.web.Response:
+    async def get(self, request: Request) -> Response:
+        """
+        ---
+        summary: Get a Service Account by id or name
+        security:
+          - jwt: []
+        tags:
+          - Service Accounts
+        parameters:
+          - name: id_or_name
+            in: path
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: Found service account
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ServiceAccount'
+          '404':
+            description: Not found
+        """
         username = await check_authorized(request)
         account = await self._resolve_service_account(request)
         # TODO: replace with proper permissions check when implemented
@@ -164,36 +202,34 @@ class ServiceAccountsApiHandler:
             data=ServiceAccountSchema().dump(account), status=HTTPOk.status_code
         )
 
-    @docs(tags=["service_accounts"], summary="Revoke and delete service account")
-    async def delete(self, request: aiohttp.web.Request) -> aiohttp.web.Response:
-        username = await check_authorized(request)
-        account = await self._resolve_service_account(request)
-        # TODO: replace with proper permissions check when implemented
-        if account.owner != username:
-            id_or_name = request.match_info["id_or_name"]
-            raise HTTPNotFound(text=f"Service account {id_or_name} not found")
-        await self.service.delete(account.id)
-        return aiohttp.web.Response(status=HTTPNoContent.status_code)
-
-    @docs(
-        tags=["service_accounts"],
-        summary="Create new service account",
-        responses={
-            HTTPCreated.status_code: {
-                "description": "Service account created",
-                "schema": ServiceAccountWithTokenSchema(),
-            },
-            HTTPConflict.status_code: {
-                "description": "Service Account with such name exists",
-                "schema": ClientErrorSchema(),
-            },
-        },
-    )
-    @request_schema(ServiceAccountCreateSchema())
-    async def create(
-        self,
-        request: aiohttp.web.Request,
-    ) -> aiohttp.web.Response:
+    async def create(self, request: Request) -> Response:
+        """
+        ---
+        summary: Create a new Service Account
+        security:
+          - jwt: []
+        tags:
+          - Service Accounts
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAccountCreate'
+        responses:
+          '201':
+            description: Created
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ServiceAccountWithToken'
+          '409':
+            description: Conflict
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ClientError'
+        """
         username = await check_authorized(request)
         schema = ServiceAccountCreateSchema()
         data_raw = schema.load(await request.json())
@@ -218,40 +254,32 @@ class ServiceAccountsApiHandler:
             status=HTTPCreated.status_code,
         )
 
-
-@middleware
-async def handle_exceptions(
-    request: Request, handler: Callable[[Request], Awaitable[StreamResponse]]
-) -> StreamResponse:
-    try:
-        return await handler(request)
-    except ValueError as e:
-        payload = {"error": str(e)}
-        return json_response(payload, status=HTTPBadRequest.status_code)
-    except ValidationError as e:
-        payload = {"error": str(e)}
-        return json_response(payload, status=HTTPBadRequest.status_code)
-    except aiohttp.web.HTTPException:
-        raise
-    except Exception as e:
-        msg_str = f"Unexpected exception: {str(e)}. Path with query: {request.path_qs}."
-        logging.exception(msg_str)
-        payload = {"error": msg_str}
-        return json_response(payload, status=HTTPInternalServerError.status_code)
-
-
-async def create_api_v1_app() -> aiohttp.web.Application:
-    api_v1_app = aiohttp.web.Application()
-    api_v1_handler = ApiHandler()
-    api_v1_handler.register(api_v1_app)
-    return api_v1_app
-
-
-async def create_service_accounts_app(config: Config) -> aiohttp.web.Application:
-    app = aiohttp.web.Application()
-    handler = ServiceAccountsApiHandler(app, config)
-    handler.register(app)
-    return app
+    async def delete(self, request: Request) -> Response:
+        """
+        ---
+        summary: Delete a Service Account
+        security:
+          - jwt: []
+        tags:
+          - Service Accounts
+        parameters:
+          - name: id_or_name
+            in: path
+            required: true
+            schema:
+              type: string
+        responses:
+          '204':
+            description: Deleted
+        """
+        username = await check_authorized(request)
+        account = await self._resolve_service_account(request)
+        if account.owner != username:
+            raise HTTPNotFound(
+                text=f"Service account {request.match_info['id_or_name']} not found"
+            )
+        await self.service.delete(account.id)
+        return Response(status=HTTPNoContent.status_code)
 
 
 @asynccontextmanager
@@ -266,9 +294,7 @@ def _setup_cors(app: aiohttp.web.Application, config: CORSConfig) -> None:
 
     logger.info("Setting up CORS with allowed origins: %s", config.allowed_origins)
     default_options = aiohttp_cors.ResourceOptions(
-        allow_credentials=True,
-        expose_headers="*",
-        allow_headers="*",
+        allow_credentials=True, expose_headers="*", allow_headers="*"
     )
     cors = aiohttp_cors.setup(
         app, defaults=dict.fromkeys(config.allowed_origins, default_options)
@@ -284,9 +310,29 @@ async def add_version_to_header(request: Request, response: StreamResponse) -> N
     )
 
 
+async def create_api_v1_app() -> aiohttp.web.Application:
+    api_v1_app = aiohttp.web.Application()
+    api_v1_handler = ApiHandler()
+    api_v1_handler.register(api_v1_app)
+    return api_v1_app
+
+
+def create_service_accounts_subapp(config: Config) -> aiohttp.web.Application:
+    app = aiohttp.web.Application()
+    handler = ServiceAccountsApiHandler(app, config)
+    handler.register(app)
+    return app
+
+
 async def create_app(config: Config) -> aiohttp.web.Application:
     app = aiohttp.web.Application(middlewares=[handle_exceptions])
     app[CONFIG] = config
+
+    service_accounts_app = create_service_accounts_subapp(config)
+    app.add_subapp("/api/v1/service_accounts", service_accounts_app)
+
+    api_v1_app = await create_api_v1_app()
+    app.add_subapp("/api/v1", api_v1_app)
 
     async def _init_app(app: aiohttp.web.Application) -> AsyncIterator[None]:
         async with AsyncExitStack() as exit_stack:
@@ -308,41 +354,102 @@ async def create_app(config: Config) -> aiohttp.web.Application:
             storage: Storage = PostgresStorage(postgres_pool)
 
             logger.info("Initializing Service")
-            app[SERVICE_ACCOUNTS_APP][SERVICE] = AccountsService(
+            service = AccountsService(
                 auth_client=auth_client,
                 storage=storage,
                 api_base_url=config.api_base_url,
             )
-
+            app[SERVICE] = service
+            # Propagate the service instance to the subapp.
+            service_accounts_app[SERVICE] = service
             yield
 
     app.cleanup_ctx.append(_init_app)
-
-    api_v1_app = await create_api_v1_app()
-    app[API_V1_APP] = api_v1_app
-
-    service_accounts_app = await create_service_accounts_app(config)
-    app[SERVICE_ACCOUNTS_APP] = service_accounts_app
-    api_v1_app.add_subapp("/service_accounts", service_accounts_app)
-
-    app.add_subapp("/api/v1", api_v1_app)
-
     app.on_response_prepare.append(add_version_to_header)
 
     _setup_cors(app, config.cors)
     if config.enable_docs:
         prefix = "/api/docs/v1/service_accounts"
-        setup_aiohttp_apispec(
-            app=app,
-            title="Service Accounts API documentation",
-            version="v1",
-            url=f"{prefix}/swagger.json",
-            static_path=f"{prefix}/static",
-            swagger_path=f"{prefix}/ui",
-            security=[{"jwt": []}],
-            securityDefinitions={
-                "jwt": {"type": "apiKey", "name": "Authorization", "in": "header"},
+        docs = SwaggerDocs(
+            app,
+            info=SwaggerInfo(
+                title="Service Accounts API documentation",
+                version="v1",
+                description="API to manage service accounts",
+            ),
+            swagger_ui_settings=SwaggerUiSettings(path=f"{prefix}/ui"),
+        )
+        docs.spec["components"] = {
+            "securitySchemes": {
+                "jwt": {
+                    "type": "apiKey",
+                    "name": "Authorization",
+                    "in": "header",
+                }
             },
+            "schemas": {
+                "ServiceAccount": {
+                    "type": "object",
+                    "required": [
+                        "id",
+                        "name",
+                        "role",
+                        "owner",
+                        "created_at",
+                        "role_deleted",
+                    ],
+                    "properties": {
+                        "id": {"type": "string"},
+                        "name": {"type": "string"},
+                        "default_cluster": {"type": "string"},
+                        "default_project": {"type": "string"},
+                        "default_org": {"type": "string"},
+                        "role": {"type": "string"},
+                        "owner": {"type": "string"},
+                        "created_at": {"type": "string", "format": "date-time"},
+                        "role_deleted": {"type": "boolean"},
+                    },
+                },
+                "ServiceAccountCreate": {
+                    "type": "object",
+                    "required": ["default_cluster", "default_project"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "default_cluster": {"type": "string"},
+                        "default_project": {"type": "string"},
+                        "default_org": {"type": "string"},
+                    },
+                },
+                "ServiceAccountWithToken": {
+                    "allOf": [
+                        {"$ref": "#/components/schemas/ServiceAccount"},
+                        {
+                            "type": "object",
+                            "required": ["token"],
+                            "properties": {"token": {"type": "string"}},
+                        },
+                    ]
+                },
+                "ClientError": {
+                    "type": "object",
+                    "required": ["code", "description"],
+                    "properties": {
+                        "code": {"type": "string"},
+                        "description": {"type": "string"},
+                    },
+                },
+            },
+        }
+        handler_instance = ServiceAccountsApiHandler(service_accounts_app, config)
+        docs.add_routes(
+            [
+                get("/api/v1/service_accounts", handler_instance.list),
+                post("/api/v1/service_accounts", handler_instance.create),
+                get("/api/v1/service_accounts/{id_or_name}", handler_instance.get),
+                delete(
+                    "/api/v1/service_accounts/{id_or_name}", handler_instance.delete
+                ),
+            ]
         )
     return app
 

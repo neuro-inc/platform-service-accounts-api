@@ -47,7 +47,7 @@ class ServiceAccountsApiEndpoints:
 
     @property
     def openapi_json_url(self) -> str:
-        return f"{self.server_base_url}/api/docs/v1/service_accounts/swagger.json"
+        return f"{self.server_base_url}/api/docs/v1/service_accounts/ui/swagger.json"
 
     @property
     def accounts_url(self) -> str:
