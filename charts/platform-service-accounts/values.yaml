@@ -53,7 +53,7 @@ externalSecrets:
       API_KEY:
         key: kv-v2/platform
         property: API_KEY
-        
+
 sentry: {}
 
 postgres:
