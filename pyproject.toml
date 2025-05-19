@@ -18,7 +18,7 @@ packages = [{ include = "platform_service_accounts_api" }]
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
 aiohttp = { version = "3.11.18", extras = ["speedups"] }
-neuro-auth-client = "24.8.0"
+neuro-auth-client = "25.5.0"
 neuro-logging = "25.1.0"
 aiohttp-cors = "0.8.0"
 marshmallow = "3.20.1"
