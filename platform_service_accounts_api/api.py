@@ -365,6 +365,12 @@ async def create_app(config: Config) -> aiohttp.web.Application:
             yield
 
     app.cleanup_ctx.append(_init_app)
+
+    async def handle_ping(request: aiohttp.web.Request) -> aiohttp.web.Response:
+        return aiohttp.web.Response(text="Pong")
+
+    app.router.add_get("/ping", handle_ping)
+
     app.on_response_prepare.append(add_version_to_header)
 
     _setup_cors(app, config.cors)
