@@ -19,7 +19,7 @@ packages = [{ include = "platform_service_accounts_api" }]
 python = ">=3.11,<3.14"
 aiohttp = { version = "3.12.12", extras = ["speedups"] }
 neuro-auth-client = "25.5.1"
-neuro-logging = "25.1.0"
+neuro-logging = "25.6.0"
 aiohttp-cors = "0.8.0"
 marshmallow = "3.20.1"
 aiohttp-swagger3 = "0.10.0"
