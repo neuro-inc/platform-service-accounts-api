@@ -18,8 +18,19 @@ resources:
     cpu: '0.2'
     memory: 600Mi
 
+service:
+  labels: {}
+  annotations: {}
+
 ingress:
   enabled: false
+
+  hosts: []
+
+  className: ""
+
+  labels: {}
+  annotations: {}
 
 platform:
   apiPublicUrl: https://staging.neu.ro/api/v1
