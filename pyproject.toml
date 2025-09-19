@@ -35,7 +35,7 @@ platform-service-accounts-api = "platform_service_accounts_api.api:main"
 
 [tool.poetry.group.dev.dependencies]
 docker = "7.1.0"
-mypy = "1.17.1"
+mypy = "1.18.2"
 pre-commit = "4.3.0"
 pytest = "8.3.5"
 pytest-aiohttp = "1.1.0"
