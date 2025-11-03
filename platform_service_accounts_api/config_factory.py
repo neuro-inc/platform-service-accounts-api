@@ -5,9 +5,8 @@ import os
 import pathlib
 from collections.abc import Sequence
 
-from yarl import URL
-
 from alembic.config import Config as AlembicConfig
+from yarl import URL
 
 from .config import (
     Config,
