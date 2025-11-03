@@ -13,7 +13,7 @@ def postgres_storage(postgres_pool: Pool) -> PostgresStorage:
 
 class TestPostgresStorage(_TestAStorage):
     @pytest.fixture
-    def storage(  # type: ignore
+    def storage(
         self,
         postgres_storage: PostgresStorage,
     ) -> Storage:
