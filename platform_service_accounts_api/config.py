@@ -3,9 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from yarl import URL
-
 from alembic.config import Config as AlembicConfig
+from yarl import URL
 
 
 @dataclass(frozen=True)
