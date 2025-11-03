@@ -110,7 +110,7 @@ class PostgresStorage(Storage):
 
     @trace
     async def get(self, id: str) -> ServiceAccount:
-        query = self._table.select(self._table.c.id == id)
+        query = self._table.select().where(self._table.c.id == id)
         record = await self._fetchrow(query)
         if not record:
             raise NotExistsError
