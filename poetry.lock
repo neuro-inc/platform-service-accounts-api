@@ -480,6 +480,7 @@ description = "Python bindings for the Brotli compression library"
 optional = false
 python-versions = "*"
 groups = ["main"]
+markers = "platform_python_implementation == \"CPython\""
 files = [
     {file = "brotli-1.2.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:99cfa69813d79492f0e5d52a20fd18395bc82e671d5d40bd5a91d13e75e468e8"},
     {file = "brotli-1.2.0-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:3ebe801e0f4e56d17cd386ca6600573e3706ce1845376307f5d2cbd32149b69a"},
@@ -2143,6 +2144,7 @@ description = "Python for Window Extensions"
 optional = false
 python-versions = "*"
 groups = ["dev"]
+markers = "sys_platform == \"win32\""
 files = [
     {file = "pywin32-311-cp310-cp310-win32.whl", hash = "sha256:d03ff496d2a0cd4a5893504789d4a15399133fe82517455e78bad62efbb7f0a3"},
     {file = "pywin32-311-cp310-cp310-win_amd64.whl", hash = "sha256:797c2772017851984b97180b0bebe4b620bb86328e8a884bb626156295a63b3b"},
@@ -2312,14 +2314,14 @@ files = [
 
 [[package]]
 name = "sentry-sdk"
-version = "2.19.2"
+version = "2.39.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "sentry_sdk-2.19.2-py2.py3-none-any.whl", hash = "sha256:ebdc08228b4d131128e568d696c210d846e5b9d70aa0327dec6b1272d9d40b84"},
-    {file = "sentry_sdk-2.19.2.tar.gz", hash = "sha256:467df6e126ba242d39952375dd816fbee0f217d119bf454a8ce74cf1e7909e8d"},
+    {file = "sentry_sdk-2.39.0-py2.py3-none-any.whl", hash = "sha256:ba655ca5e57b41569b18e2a5552cb3375209760a5d332cdd87c6c3f28f729602"},
+    {file = "sentry_sdk-2.39.0.tar.gz", hash = "sha256:8c185854d111f47f329ab6bc35993f28f7a6b7114db64aa426b326998cfa14e9"},
 ]
 
 [package.dependencies]
@@ -2347,6 +2349,7 @@ httpx = ["httpx (>=0.16.0)"]
 huey = ["huey (>=2)"]
 huggingface-hub = ["huggingface_hub (>=0.22)"]
 langchain = ["langchain (>=0.0.210)"]
+langgraph = ["langgraph (>=0.6.6)"]
 launchdarkly = ["launchdarkly-server-sdk (>=9.8.0)"]
 litestar = ["litestar (>=2.0.0)"]
 loguru = ["loguru (>=0.5)"]
@@ -2363,7 +2366,9 @@ sanic = ["sanic (>=0.8)"]
 sqlalchemy = ["sqlalchemy (>=1.2)"]
 starlette = ["starlette (>=0.19.1)"]
 starlite = ["starlite (>=1.48)"]
+statsig = ["statsig (>=0.55.3)"]
 tornado = ["tornado (>=6)"]
+unleash = ["UnleashClient (>=6.0.1)"]
 
 [[package]]
 name = "six"
