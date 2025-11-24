@@ -1,7 +1,7 @@
 apiVersion: v2
 name: platform-service-accounts
 description: Neu.ro service accounts service
-version: 1.0.0
+version: 1.0.1
 appVersion: 1.0.0
 dependencies:
   - name: postgres-db-init
