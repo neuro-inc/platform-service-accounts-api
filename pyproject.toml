@@ -21,7 +21,7 @@ aiohttp = { version = "3.13.2", extras = ["speedups"] }
 neuro-auth-client = "25.8.2"
 neuro-logging = "25.11.0"
 aiohttp-cors = "^0.8.1"
-marshmallow = "3.20.1"
+marshmallow = "4.1.2"
 aiohttp-swagger3 = "0.10.0"
 markupsafe = "3.0.3"
 alembic = "1.14.1"
