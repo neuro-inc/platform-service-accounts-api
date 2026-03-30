@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from platform_service_accounts_api.config_factory import EnvironConfigFactory
+from platform_service_accounts_api.storage.postgres import ServiceAccountTables
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,7 +20,7 @@ if sys.argv[0].endswith("alembic"):
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = ServiceAccountTables.create().metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
