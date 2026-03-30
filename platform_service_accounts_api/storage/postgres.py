@@ -28,6 +28,7 @@ from .base import (
 @dataclass(frozen=True)
 class ServiceAccountTables:
     service_accounts: sa.Table
+    metadata: sa.MetaData
 
     @classmethod
     def create(cls) -> ServiceAccountTables:
@@ -45,6 +46,7 @@ class ServiceAccountTables:
         )
         return cls(
             service_accounts=service_accounts,
+            metadata=metadata,
         )
 
 
