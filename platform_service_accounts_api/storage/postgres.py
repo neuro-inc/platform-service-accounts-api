@@ -43,6 +43,7 @@ class ServiceAccountTables:
                 "created_at", sapg.TIMESTAMP(timezone=True, precision=6), nullable=False
             ),
             sa.Column("payload", sapg.JSONB(), nullable=False),
+            sa.Index("account_name_owner_uq", "name", "owner", unique=True),
         )
         return cls(
             service_accounts=service_accounts,
