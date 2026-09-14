@@ -26,7 +26,7 @@ class CORSConfig:
 
 @dataclass(frozen=True)
 class PostgresConfig:
-    postgres_dsn: str
+    postgres_dsn: str = field(repr=False)
 
     alembic: AlembicConfig
 
