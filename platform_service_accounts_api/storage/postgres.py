@@ -6,7 +6,6 @@ from collections.abc import AsyncIterator
 from dataclasses import asdict, dataclass
 from typing import Any
 
-import asyncpgsa
 import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as sapg
 import sqlalchemy.sql as sasql
@@ -15,6 +14,7 @@ from asyncpg.cursor import CursorFactory
 from asyncpg.pool import Pool
 from asyncpg.protocol.protocol import Record
 from neuro_logging import trace
+from sqlalchemy.dialects.postgresql import dialect
 
 from .base import (
     ExistsError,
@@ -23,6 +23,20 @@ from .base import (
     ServiceAccountData,
     Storage,
 )
+
+_postgresql_dialect = dialect(paramstyle="pyformat")
+
+
+def _compile_query(query: sasql.ClauseElement) -> tuple[str, list[Any]]:
+    compiled = query.compile(dialect=_postgresql_dialect)
+    params = sorted(compiled.params.items())
+    placeholders = {key: f"${index}" for index, (key, _) in enumerate(params, 1)}
+    query_string = compiled.string % placeholders
+    processors = compiled._bind_processors
+    values = [
+        processors[key](value) if key in processors else value for key, value in params
+    ]
+    return query_string, values
 
 
 @dataclass(frozen=True)
@@ -64,19 +78,19 @@ class PostgresStorage(Storage):
     async def _execute(
         self, query: sasql.ClauseElement, conn: Connection | None = None
     ) -> str:
-        query_string, params = asyncpgsa.compile_query(query)
+        query_string, params = _compile_query(query)
         conn = conn or self._pool
         return await conn.execute(query_string, *params)
 
     async def _fetchrow(
         self, query: sasql.ClauseElement, conn: Connection | None = None
     ) -> Record | None:
-        query_string, params = asyncpgsa.compile_query(query)
+        query_string, params = _compile_query(query)
         conn = conn or self._pool
         return await conn.fetchrow(query_string, *params)
 
     def _cursor(self, query: sasql.ClauseElement, conn: Connection) -> CursorFactory:
-        query_string, params = asyncpgsa.compile_query(query)
+        query_string, params = _compile_query(query)
         return conn.cursor(query_string, *params)
 
     def _gen_id(self) -> str:
