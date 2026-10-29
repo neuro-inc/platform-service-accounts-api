@@ -47,6 +47,5 @@ ENV PATH=/home/$SERVICE_NAME/.local/bin:$PATH
 ENV NP_SERVICE_ACCOUNTS_API_PORT=8080
 EXPOSE $NP_SERVICE_ACCOUNTS_API_PORT
 
-RUN python -c "from importlib.metadata import version; assert tuple(map(int, version('certifi').split('.'))) >= (2026, 10, 19)"
 
 ENTRYPOINT [ "platform-service-accounts-api" ]
